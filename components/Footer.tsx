@@ -1,0 +1,74 @@
+import Link from "next/link";
+import { BRAND } from "@/lib/brand";
+import { CATEGORIES } from "@/lib/data/categories";
+
+export function Footer() {
+  return (
+    <footer className="mt-20 border-t bg-foreground text-white">
+      <div className="container-page grid gap-10 py-14 md:grid-cols-4">
+        <div>
+          <p className="font-serif text-xl font-bold">CHICAGO OUTLET</p>
+          <p className="mt-3 max-w-xs text-sm text-white/60">{BRAND.tagline}</p>
+          <p className="mt-4 text-sm text-white/60">{BRAND.address}</p>
+          <p className="text-sm text-white/60">{BRAND.phone}</p>
+        </div>
+
+        <div>
+          <p className="mb-3 text-xs font-semibold uppercase tracking-wider text-accent">
+            Дэлгүүр
+          </p>
+          <ul className="space-y-2 text-sm text-white/70">
+            {CATEGORIES.slice(0, 5).map((c) => (
+              <li key={c.slug}>
+                <Link
+                  href={`/shop?category=${encodeURIComponent(c.name)}`}
+                  className="hover:text-accent"
+                >
+                  {c.nameMn}
+                </Link>
+              </li>
+            ))}
+          </ul>
+        </div>
+
+        <div>
+          <p className="mb-3 text-xs font-semibold uppercase tracking-wider text-accent">
+            Тусламж
+          </p>
+          <ul className="space-y-2 text-sm text-white/70">
+            <li><Link href="/shop" className="hover:text-accent">Хүргэлт & Буцаалт</Link></li>
+            <li><Link href="/account" className="hover:text-accent">Миний бүртгэл</Link></li>
+            <li><Link href="/account" className="hover:text-accent">Захиалга хянах</Link></li>
+            <li><Link href="/admin" className="hover:text-accent">Админ нэвтрэх</Link></li>
+          </ul>
+        </div>
+
+        <div>
+          <p className="mb-3 text-xs font-semibold uppercase tracking-wider text-accent">
+            Мэдээлэл авах
+          </p>
+          <p className="text-sm text-white/60">
+            Шинэ цуглуулга, онцгой саналыг хүлээж аваарай.
+          </p>
+          <form className="mt-3 flex">
+            <input
+              type="email"
+              placeholder="И-мэйл хаяг"
+              className="w-full rounded-l-md border-0 bg-white/10 px-3 py-2 text-sm text-white placeholder:text-white/40 outline-none"
+            />
+            <button
+              type="submit"
+              className="rounded-r-md bg-accent px-4 text-sm font-semibold text-foreground"
+            >
+              →
+            </button>
+          </form>
+        </div>
+      </div>
+      <div className="border-t border-white/10 py-5 text-center text-xs text-white/40">
+        © {new Date().getFullYear()} Chicago Outlet. Бүх эрх хуулиар хамгаалагдсан. ·
+        Secure Payment · QPay удахгүй
+      </div>
+    </footer>
+  );
+}
