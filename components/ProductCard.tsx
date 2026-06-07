@@ -7,6 +7,7 @@ import { finalPrice, formatMNT, classNames } from "@/lib/utils";
 import { useCart } from "@/lib/store/cart";
 import { ProductImage } from "./ProductImage";
 import { Badge } from "./Badge";
+import { StarIcon } from "./Icons";
 
 export function ProductCard({ product }: { product: Product }) {
   const addItem = useCart((s) => s.addItem);
@@ -74,7 +75,7 @@ export function ProductCard({ product }: { product: Product }) {
           {product.name}
         </Link>
         <div className="mt-1 flex items-center gap-1 text-xs text-muted">
-          <span className="text-accent-dark">★</span>
+          <StarIcon className="h-3.5 w-3.5 text-accent-dark" />
           <span>{product.rating.toFixed(1)}</span>
           <span>({product.reviewCount})</span>
         </div>

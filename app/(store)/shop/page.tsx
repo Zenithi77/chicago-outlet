@@ -6,6 +6,7 @@ import { PRODUCTS } from "@/lib/data/products";
 import { CATEGORIES } from "@/lib/data/categories";
 import { ProductCard } from "@/components/ProductCard";
 import { finalPrice, classNames } from "@/lib/utils";
+import { FilterIcon } from "@/components/Icons";
 import type { Product } from "@/lib/types";
 
 const SORTS = [
@@ -107,9 +108,9 @@ function ShopContent() {
       <div className="flex items-center justify-between border-y py-3 md:hidden">
         <button
           onClick={() => setFiltersOpen((v) => !v)}
-          className="text-sm font-semibold"
+          className="flex items-center gap-1.5 text-sm font-semibold"
         >
-          ⚙ Шүүлтүүр
+          <FilterIcon className="h-4 w-4" /> Шүүлтүүр
         </button>
         <SortSelect sort={sort} setSort={setSort} />
       </div>

@@ -6,6 +6,7 @@ import { ORDERS } from "@/lib/data/orders";
 import { formatMNT, formatDate, classNames } from "@/lib/utils";
 import type { Profile } from "@/lib/supabase/auth";
 import { logout } from "./actions";
+import { DashboardIcon } from "@/components/Icons";
 
 const STATUS_LABEL: Record<string, string> = {
   pending: "Хүлээгдэж буй",
@@ -38,7 +39,7 @@ export function AccountDashboard({
     <div className="container-page py-10">
       <div className="mb-8 flex flex-wrap items-center justify-between gap-4">
         <div>
-          <h1 className="font-serif text-3xl font-bold">Сайн байна уу, {name} 👋</h1>
+          <h1 className="font-serif text-3xl font-bold">Сайн байна уу, {name}</h1>
           <p className="text-sm text-muted">
             {ROLE_LABEL[profile.role] ?? "Гишүүн"} · {profile.email}
           </p>
@@ -49,7 +50,7 @@ export function AccountDashboard({
               href="/admin"
               className="inline-flex items-center gap-2 rounded-full bg-foreground px-5 py-2.5 text-sm font-semibold text-white transition hover:bg-accent hover:text-foreground"
             >
-              <span>◈</span> Админ хэсэг рүү орох
+              <DashboardIcon className="h-4 w-4" /> Админ хэсэг рүү орох
             </Link>
           )}
           <form action={logout}>

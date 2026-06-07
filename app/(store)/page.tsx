@@ -3,6 +3,7 @@ import { PRODUCTS } from "@/lib/data/products";
 import { ProductCard } from "@/components/ProductCard";
 import { ProductImage } from "@/components/ProductImage";
 import { HeroVideo } from "@/components/HeroVideo";
+import { ArrowRightIcon } from "@/components/Icons";
 
 export default function HomePage() {
   const newArrivals = PRODUCTS.filter((p) => p.isNewArrival && p.isActive).slice(0, 8);
@@ -125,8 +126,8 @@ function Section({
           <h2 className="mt-1 font-serif text-2xl font-bold md:text-3xl">{title}</h2>
         </div>
         {href && (
-          <Link href={href} className="text-sm font-medium text-muted hover:text-foreground">
-            Бүгдийг үзэх →
+          <Link href={href} className="inline-flex items-center gap-1.5 text-sm font-medium text-muted hover:text-foreground">
+            Бүгдийг үзэх <ArrowRightIcon className="h-4 w-4" />
           </Link>
         )}
       </div>

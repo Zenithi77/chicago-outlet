@@ -4,6 +4,7 @@ import { useState } from "react";
 import { ORDERS } from "@/lib/data/orders";
 import type { Order, OrderStatus } from "@/lib/types";
 import { formatMNT, formatDate, classNames } from "@/lib/utils";
+import { CloseIcon, ArrowRightIcon } from "@/components/Icons";
 
 const STATUS: { value: OrderStatus; label: string; color: string }[] = [
   { value: "pending", label: "Хүлээгдэж буй", color: "bg-accent/20 text-accent-dark" },
@@ -130,7 +131,7 @@ export default function AdminOrders() {
           <aside className="fixed right-0 top-0 z-50 h-full w-full max-w-lg overflow-y-auto bg-surface p-6 shadow-xl">
             <div className="flex items-center justify-between">
               <h2 className="font-serif text-xl font-bold">{selected.id}</h2>
-              <button onClick={() => setSelected(null)} className="text-xl">✕</button>
+              <button onClick={() => setSelected(null)} aria-label="Хаах" className="text-muted hover:text-foreground"><CloseIcon className="h-5 w-5" /></button>
             </div>
             <span className={classNames("mt-2 inline-block rounded-full px-3 py-1 text-xs font-semibold", statusMeta(selected.status).color)}>
               {statusMeta(selected.status).label}
@@ -180,13 +181,13 @@ export default function AdminOrders() {
                       key={to}
                       onClick={() => setConfirm({ order: selected, to })}
                       className={classNames(
-                        "rounded-md px-4 py-2 text-sm font-semibold",
+                        "flex items-center gap-1.5 rounded-md px-4 py-2 text-sm font-semibold",
                         to === "cancelled" || to === "refunded"
                           ? "border border-danger text-danger hover:bg-danger/10"
                           : "bg-foreground text-white hover:bg-accent hover:text-foreground"
                       )}
                     >
-                      → {statusMeta(to).label}
+                      <ArrowRightIcon className="h-4 w-4" /> {statusMeta(to).label}
                     </button>
                   ))}
                 </div>

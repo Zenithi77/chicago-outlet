@@ -7,6 +7,7 @@ import { validateCoupon } from "@/lib/data/orders";
 import { formatMNT, classNames } from "@/lib/utils";
 import { BRAND } from "@/lib/brand";
 import { ProductImage } from "@/components/ProductImage";
+import { BagIcon, ArrowLeftIcon } from "@/components/Icons";
 
 export default function CartPage() {
   const { items, updateQty, removeItem, coupon, discount, applyCoupon, removeCoupon, shippingMethod, setShipping } = useCart();
@@ -32,7 +33,7 @@ export default function CartPage() {
   if (items.length === 0) {
     return (
       <div className="container-page flex flex-col items-center gap-4 py-28 text-center">
-        <span className="text-5xl">⛣</span>
+        <BagIcon className="h-12 w-12 text-muted" />
         <h1 className="font-serif text-2xl font-bold">Таны сагс хоосон байна</h1>
         <p className="text-muted">Цуглуулгаас сонголтоо хийгээрэй.</p>
         <Link href="/shop" className="rounded-md bg-foreground px-6 py-3 text-sm font-semibold text-white">
@@ -81,8 +82,8 @@ export default function CartPage() {
               </li>
             ))}
           </ul>
-          <Link href="/shop" className="mt-5 inline-block text-sm text-accent-dark underline">
-            ← Дэлгүүр үргэлжлүүлэх
+          <Link href="/shop" className="mt-5 inline-flex items-center gap-1.5 text-sm text-accent-dark underline">
+            <ArrowLeftIcon className="h-4 w-4" /> Дэлгүүр үргэлжлүүлэх
           </Link>
         </div>
 
@@ -160,7 +161,7 @@ export default function CartPage() {
           >
             Захиалга хийх
           </Link>
-          <p className="mt-3 text-center text-xs text-muted">⛨ Аюулгүй төлбөр · Үнэгүй буцаалт</p>
+          <p className="mt-3 text-center text-xs text-muted">Аюулгүй төлбөр · Үнэгүй буцаалт</p>
         </div>
       </div>
     </div>

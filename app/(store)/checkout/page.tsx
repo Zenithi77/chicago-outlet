@@ -5,6 +5,7 @@ import { useState } from "react";
 import { useCart } from "@/lib/store/cart";
 import { formatMNT, classNames, isValidMnPhone, isValidEmail, generateOrderId } from "@/lib/utils";
 import { BRAND } from "@/lib/brand";
+import { CheckIcon, ArrowLeftIcon } from "@/components/Icons";
 import type { PaymentMethod } from "@/lib/types";
 
 const STEPS = ["Хүргэлт", "Шалгах", "Төлбөр", "Баталгаажуулалт"];
@@ -78,7 +79,7 @@ export default function CheckoutPage() {
                   i <= step ? "bg-foreground text-white" : "bg-border text-muted"
                 )}
               >
-                {i < step ? "✓" : i + 1}
+                {i < step ? <CheckIcon className="h-4 w-4" /> : i + 1}
               </span>
               <span className="mt-1 text-[11px]">{s}</span>
             </div>
@@ -164,7 +165,7 @@ export default function CheckoutPage() {
                 />
                 <div className="rounded-lg border border-dashed bg-background p-4">
                   <div className="flex items-center justify-between">
-                    <span className="font-semibold">QPay 🔜 Удахгүй</span>
+                    <span className="font-semibold">QPay · Удахгүй</span>
                     <span className="rounded-full bg-border px-2 py-0.5 text-[10px] font-semibold uppercase">Coming Soon</span>
                   </div>
                   <p className="mt-1 text-sm text-muted">QPay дагуу төлбөр удахгүй нэмэгдэх болно.</p>
@@ -187,7 +188,9 @@ export default function CheckoutPage() {
 
           {step === 3 && (
             <div className="flex flex-col items-center gap-4 py-10 text-center">
-              <span className="flex h-16 w-16 items-center justify-center rounded-full bg-success text-3xl text-white">✓</span>
+              <span className="flex h-16 w-16 items-center justify-center rounded-full bg-success text-white">
+                <CheckIcon className="h-8 w-8" />
+              </span>
               <h2 className="font-serif text-2xl font-bold">Захиалга баталгаажлаа!</h2>
               <p className="text-muted">Захиалгын дугаар:</p>
               <p className="rounded-md bg-foreground px-4 py-2 font-mono text-lg text-white">{orderId}</p>
@@ -209,12 +212,12 @@ export default function CheckoutPage() {
           {step < 3 && (
             <div className="mt-8 flex justify-between">
               {step > 0 ? (
-                <button onClick={() => setStep((s) => s - 1)} className="rounded-md border px-6 py-3 text-sm font-semibold">
-                  ← Буцах
+                <button onClick={() => setStep((s) => s - 1)} className="flex items-center gap-1.5 rounded-md border px-6 py-3 text-sm font-semibold">
+                  <ArrowLeftIcon className="h-4 w-4" /> Буцах
                 </button>
               ) : (
-                <Link href="/cart" className="rounded-md border px-6 py-3 text-sm font-semibold">
-                  ← Сагс
+                <Link href="/cart" className="flex items-center gap-1.5 rounded-md border px-6 py-3 text-sm font-semibold">
+                  <ArrowLeftIcon className="h-4 w-4" /> Сагс
                 </Link>
               )}
               <button onClick={next} className="rounded-md bg-foreground px-8 py-3 text-sm font-semibold text-white hover:bg-accent hover:text-foreground">

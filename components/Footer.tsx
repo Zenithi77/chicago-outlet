@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { BRAND } from "@/lib/brand";
 import { CATEGORIES } from "@/lib/data/categories";
+import { ArrowRightIcon } from "@/components/Icons";
 
 export function Footer() {
   return (
@@ -58,9 +59,10 @@ export function Footer() {
             />
             <button
               type="submit"
-              className="rounded-r-md bg-accent px-4 text-sm font-semibold text-foreground"
+              aria-label="Бүртгүүлэх"
+              className="flex items-center justify-center rounded-r-md bg-accent px-4 text-foreground"
             >
-              →
+              <ArrowRightIcon className="h-4 w-4" />
             </button>
           </form>
         </div>

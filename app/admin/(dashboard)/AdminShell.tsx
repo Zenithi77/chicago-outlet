@@ -5,13 +5,22 @@ import { usePathname } from "next/navigation";
 import { classNames } from "@/lib/utils";
 import { logout } from "./actions";
 import type { Role } from "@/lib/supabase/auth";
+import {
+  DashboardIcon,
+  BoxIcon,
+  ClipboardIcon,
+  UsersIcon,
+  TagIcon,
+  ArrowUpRightIcon,
+  LogoutIcon,
+} from "@/components/Icons";
 
 const NAV = [
-  { href: "/admin", label: "Хяналтын самбар", icon: "▤" },
-  { href: "/admin/products", label: "Бараа", icon: "▦" },
-  { href: "/admin/orders", label: "Захиалга", icon: "▣" },
-  { href: "/admin/customers", label: "Хэрэглэгч", icon: "☺" },
-  { href: "/admin/coupons", label: "Купон & Урамшуулал", icon: "◈" },
+  { href: "/admin", label: "Хяналтын самбар", Icon: DashboardIcon },
+  { href: "/admin/products", label: "Бараа", Icon: BoxIcon },
+  { href: "/admin/orders", label: "Захиалга", Icon: ClipboardIcon },
+  { href: "/admin/customers", label: "Хэрэглэгч", Icon: UsersIcon },
+  { href: "/admin/coupons", label: "Купон & Урамшуулал", Icon: TagIcon },
 ];
 
 const ROLE_LABEL: Record<Role, string> = {
@@ -55,7 +64,7 @@ export function AdminShell({
                   active ? "bg-foreground text-white" : "hover:bg-background"
                 )}
               >
-                <span>{n.icon}</span>
+                <n.Icon className="h-[1.1rem] w-[1.1rem]" />
                 {n.label}
               </Link>
             );
@@ -64,16 +73,16 @@ export function AdminShell({
         <div className="border-t p-3">
           <Link
             href="/"
-            className="block rounded-md px-3 py-2 text-sm text-muted hover:bg-background"
+            className="flex items-center gap-2 rounded-md px-3 py-2 text-sm text-muted hover:bg-background"
           >
-            ↗ Дэлгүүр үзэх
+            <ArrowUpRightIcon className="h-4 w-4" /> Дэлгүүр үзэх
           </Link>
           <form action={logout}>
             <button
               type="submit"
-              className="mt-1 block w-full rounded-md px-3 py-2 text-left text-sm text-danger hover:bg-background"
+              className="mt-1 flex w-full items-center gap-2 rounded-md px-3 py-2 text-left text-sm text-danger hover:bg-background"
             >
-              ⏻ Гарах
+              <LogoutIcon className="h-4 w-4" /> Гарах
             </button>
           </form>
         </div>
@@ -89,8 +98,8 @@ export function AdminShell({
             <span className="rounded-full bg-background px-2.5 py-1 text-[11px] font-medium text-muted">
               {ROLE_LABEL[role]}
             </span>
-            <Link href="/" aria-label="Дэлгүүр" className="text-sm text-muted">
-              ↗
+            <Link href="/" aria-label="Дэлгүүр" className="text-muted">
+              <ArrowUpRightIcon className="h-4 w-4" />
             </Link>
             <form action={logout}>
               <button type="submit" className="text-sm font-medium text-danger">
@@ -112,7 +121,7 @@ export function AdminShell({
                   active ? "bg-foreground text-white" : "bg-background text-muted"
                 )}
               >
-                <span>{n.icon}</span>
+                <n.Icon className="h-4 w-4" />
                 {n.label}
               </Link>
             );

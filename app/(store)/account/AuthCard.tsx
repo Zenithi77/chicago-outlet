@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useActionState, useState } from "react";
 import { login, signup, type AuthState } from "./actions";
 import { classNames } from "@/lib/utils";
+import { CheckIcon, ArrowLeftIcon } from "@/components/Icons";
 
 const HIGHLIGHTS = [
   "100% жинхэнэ брэндийн бараа",
@@ -39,7 +40,7 @@ export function AuthCard({ next }: { next: string }) {
               {HIGHLIGHTS.map((h) => (
                 <li key={h} className="flex items-center gap-3 text-sm text-white/85">
                   <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-accent text-foreground">
-                    ✓
+                    <CheckIcon className="h-3.5 w-3.5" />
                   </span>
                   {h}
                 </li>
@@ -100,9 +101,9 @@ export function AuthCard({ next }: { next: string }) {
 
           <Link
             href="/"
-            className="mt-6 block text-center text-xs text-muted underline-offset-4 hover:text-foreground hover:underline"
+            className="mt-6 flex items-center justify-center gap-1.5 text-center text-xs text-muted underline-offset-4 hover:text-foreground hover:underline"
           >
-            ← Дэлгүүр рүү буцах
+            <ArrowLeftIcon className="h-3.5 w-3.5" /> Дэлгүүр рүү буцах
           </Link>
         </div>
       </div>

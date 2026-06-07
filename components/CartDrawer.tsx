@@ -5,6 +5,7 @@ import { useCart } from "@/lib/store/cart";
 import { formatMNT, classNames } from "@/lib/utils";
 import { BRAND } from "@/lib/brand";
 import { ProductImage } from "./ProductImage";
+import { CloseIcon, BagIcon } from "./Icons";
 
 export function CartDrawer() {
   const { items, isOpen, setOpen, updateQty, removeItem } = useCart();
@@ -31,8 +32,8 @@ export function CartDrawer() {
           <h2 className="font-serif text-lg font-semibold">
             Сагс ({items.reduce((n, i) => n + i.qty, 0)})
           </h2>
-          <button onClick={() => setOpen(false)} aria-label="Хаах" className="text-xl">
-            ✕
+          <button onClick={() => setOpen(false)} aria-label="Хаах" className="text-muted hover:text-foreground">
+            <CloseIcon className="h-5 w-5" />
           </button>
         </div>
 
@@ -49,7 +50,7 @@ export function CartDrawer() {
         <div className="flex-1 overflow-y-auto px-5">
           {items.length === 0 ? (
             <div className="flex h-full flex-col items-center justify-center gap-3 text-center text-muted">
-              <span className="text-4xl">⛣</span>
+              <BagIcon className="h-10 w-10" />
               <p>Таны сагс хоосон байна.</p>
               <Link
                 href="/shop"
@@ -75,10 +76,10 @@ export function CartDrawer() {
                       <p className="text-sm font-medium leading-tight">{item.name}</p>
                       <button
                         onClick={() => removeItem(item.productId, item.size, item.color)}
-                        className="text-xs text-muted hover:text-danger"
+                        className="text-muted hover:text-danger"
                         aria-label="Устгах"
                       >
-                        ✕
+                        <CloseIcon className="h-4 w-4" />
                       </button>
                     </div>
                     <p className="mt-0.5 text-xs text-muted">

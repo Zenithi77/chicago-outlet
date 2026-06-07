@@ -4,6 +4,7 @@ import { useEffect, useMemo, useState, useTransition, useActionState } from "rea
 import { useRouter } from "next/navigation";
 import { ProductImage } from "@/components/ProductImage";
 import { finalPrice, formatMNT, classNames } from "@/lib/utils";
+import { CameraIcon, UploadIcon, CloudIcon } from "@/components/Icons";
 import {
   createProduct,
   updateProductFields,
@@ -555,7 +556,7 @@ function ProductForm({
               onClick={() => setScanning(true)}
               className="inline-flex items-center gap-1.5 rounded-md border border-foreground px-4 py-2 text-sm font-semibold hover:bg-background"
             >
-              📷 Камераар
+              <CameraIcon className="h-4 w-4" /> Камераар
             </button>
           </div>
           {lookupMsg && (
@@ -765,15 +766,16 @@ function ProductForm({
                 e.target.value = "";
               }}
             />
-            {uploading ? "Хуулж байна…" : "⬆ Зураг хуулах"}
+            <UploadIcon className="h-4 w-4" />
+            {uploading ? "Хуулж байна…" : "Зураг хуулах"}
           </label>
           <button
             type="button"
             onClick={rehostImages}
             disabled={uploading}
-            className="rounded-lg border px-3 py-2 text-xs font-medium text-muted transition hover:border-foreground hover:text-foreground disabled:opacity-50"
+            className="inline-flex items-center gap-1.5 rounded-lg border px-3 py-2 text-xs font-medium text-muted transition hover:border-foreground hover:text-foreground disabled:opacity-50"
           >
-            ☁ Cloudinary руу хуулах
+            <CloudIcon className="h-4 w-4" /> Cloudinary руу хуулах
           </button>
         </div>
         {imgMsg && (
