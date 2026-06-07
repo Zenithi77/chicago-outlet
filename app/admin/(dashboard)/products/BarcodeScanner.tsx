@@ -3,8 +3,8 @@
 import { useEffect, useRef, useState } from "react";
 import type { IScannerControls } from "@zxing/browser";
 
-// Full-screen camera barcode scanner. Prefers the rear camera and works on
-// mobile browsers (incl. iOS Safari) via getUserMedia + ZXing decoding.
+// Full-screen camera barcode scanner. Prefers the rear camera, restricts to
+// common retail 1D formats, and enables TRY_HARDER for faster recognition.
 export function BarcodeScanner({
   onDetected,
   onClose,
@@ -14,6 +14,7 @@ export function BarcodeScanner({
 }) {
   const videoRef = useRef<HTMLVideoElement>(null);
   const [error, setError] = useState("");
+  const [status, setStatus] = useState("Камер бэлдэж байна…");
 
   useEffect(() => {
     let controls: IScannerControls | undefined;
@@ -23,17 +24,62 @@ export function BarcodeScanner({
       const video = videoRef.current;
       if (!video) return;
       try {
-        const { BrowserMultiFormatReader } = await import("@zxing/browser");
-        const reader = new BrowserMultiFormatReader();
+        const [{ BrowserMultiFormatReader }, zxing] = await Promise.all([
+          import("@zxing/browser"),
+          import("@zxing/library"),
+        ]);
+        const { BarcodeFormat, DecodeHintType } = zxing;
+
+        // Only retail-relevant 1D formats → much faster than the default
+        // "try every format" pass that BrowserMultiFormatReader does.
+        const hints = new Map();
+        hints.set(DecodeHintType.POSSIBLE_FORMATS, [
+          BarcodeFormat.EAN_13,
+          BarcodeFormat.EAN_8,
+          BarcodeFormat.UPC_A,
+          BarcodeFormat.UPC_E,
+          BarcodeFormat.CODE_128,
+          BarcodeFormat.CODE_39,
+          BarcodeFormat.ITF,
+        ]);
+        hints.set(DecodeHintType.TRY_HARDER, true);
+
+        // Decode roughly every 120 ms (~8 fps) — keeps CPU low but still snappy.
+        const reader = new BrowserMultiFormatReader(hints, {
+          delayBetweenScanAttempts: 120,
+          delayBetweenScanSuccess: 120,
+        });
+
+        setStatus("Кодыг хүрээ дотор байрлуулна уу");
+
         controls = await reader.decodeFromConstraints(
-          { video: { facingMode: { ideal: "environment" } } },
+          {
+            video: {
+              facingMode: { ideal: "environment" },
+              width: { ideal: 1280 },
+              height: { ideal: 720 },
+              // @ts-expect-error advanced focus hints (Chrome only)
+              advanced: [{ focusMode: "continuous" }],
+            },
+          },
           video,
-          (result) => {
-            if (result && !done) {
+          (result, err) => {
+            if (done) return;
+            if (result) {
               done = true;
               const text = result.getText().replace(/\D/g, "");
-              controls?.stop();
-              onDetected(text);
+              if (text.length >= 6) {
+                try {
+                  (navigator as Navigator & { vibrate?: (p: number) => void })
+                    .vibrate?.(60);
+                } catch {}
+                controls?.stop();
+                onDetected(text);
+              } else {
+                done = false;
+              }
+            } else if (err && err.name !== "NotFoundException") {
+              // ignore noisy "not found" frames
             }
           }
         );
@@ -53,7 +99,7 @@ export function BarcodeScanner({
   return (
     <div className="fixed inset-0 z-[60] flex flex-col bg-black/95">
       <div className="flex items-center justify-between px-5 py-4 text-white">
-        <span className="text-sm font-semibold">Barcode  уншуулах</span>
+        <span className="text-sm font-semibold">Barcode уншуулах</span>
         <button
           onClick={onClose}
           className="rounded-full bg-white/15 px-4 py-1.5 text-sm hover:bg-white/25"
@@ -72,7 +118,9 @@ export function BarcodeScanner({
         />
         {!error && (
           <div className="pointer-events-none absolute inset-0 flex items-center justify-center">
-            <div className="h-36 w-72 max-w-[80%] rounded-xl border-2 border-accent shadow-[0_0_0_9999px_rgba(0,0,0,0.45)]" />
+            <div className="relative h-40 w-80 max-w-[85%] rounded-xl border-2 border-accent shadow-[0_0_0_9999px_rgba(0,0,0,0.55)]">
+              <div className="absolute left-0 right-0 top-1/2 h-0.5 -translate-y-1/2 animate-pulse bg-accent" />
+            </div>
           </div>
         )}
         {error && (
@@ -83,7 +131,7 @@ export function BarcodeScanner({
       </div>
 
       <p className="px-6 py-5 text-center text-xs text-white/70">
-        Барааны Barcode ыг хүрээн дотор байрлуулна уу — автоматаар уншина.
+        {error ? "" : status}
       </p>
     </div>
   );
