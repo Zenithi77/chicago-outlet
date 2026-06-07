@@ -81,29 +81,44 @@ export function AdminShell({
 
       <div className="flex-1">
         {/* Mobile top bar */}
-        <div className="flex items-center justify-between border-b bg-surface px-4 py-3 md:hidden">
-          <span className="font-serif font-bold">Admin</span>
-          <form action={logout}>
-            <button type="submit" className="text-sm text-danger">
-              Гарах
-            </button>
-          </form>
-        </div>
-        <div className="flex gap-2 overflow-x-auto border-b bg-surface px-4 py-2 text-sm no-scrollbar md:hidden">
-          {NAV.map((n) => (
-            <Link
-              key={n.href}
-              href={n.href}
-              className={classNames(
-                "whitespace-nowrap rounded-md px-3 py-1.5",
-                pathname === n.href ? "bg-foreground text-white" : "bg-background"
-              )}
-            >
-              {n.label}
+        <div className="sticky top-0 z-30 flex items-center justify-between border-b bg-surface/90 px-4 py-3 backdrop-blur md:hidden">
+          <Link href="/admin" className="font-serif text-base font-bold">
+            CHICAGO <span className="text-accent-dark">OUTLET</span>
+          </Link>
+          <div className="flex items-center gap-2.5">
+            <span className="rounded-full bg-background px-2.5 py-1 text-[11px] font-medium text-muted">
+              {ROLE_LABEL[role]}
+            </span>
+            <Link href="/" aria-label="Дэлгүүр" className="text-sm text-muted">
+              ↗
             </Link>
-          ))}
+            <form action={logout}>
+              <button type="submit" className="text-sm font-medium text-danger">
+                Гарах
+              </button>
+            </form>
+          </div>
         </div>
-        <main className="p-5 md:p-8">{children}</main>
+        {/* Mobile nav */}
+        <div className="sticky top-[49px] z-20 flex gap-2 overflow-x-auto border-b bg-surface px-4 py-2.5 text-sm no-scrollbar md:hidden">
+          {NAV.map((n) => {
+            const active = pathname === n.href;
+            return (
+              <Link
+                key={n.href}
+                href={n.href}
+                className={classNames(
+                  "flex items-center gap-1.5 whitespace-nowrap rounded-full px-3.5 py-1.5 font-medium transition",
+                  active ? "bg-foreground text-white" : "bg-background text-muted"
+                )}
+              >
+                <span>{n.icon}</span>
+                {n.label}
+              </Link>
+            );
+          })}
+        </div>
+        <main className="p-4 sm:p-5 md:p-8">{children}</main>
       </div>
     </div>
   );

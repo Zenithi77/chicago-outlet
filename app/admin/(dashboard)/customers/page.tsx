@@ -30,7 +30,7 @@ export default function AdminCustomers() {
       <h1 className="font-serif text-2xl font-bold">Хэрэглэгч</h1>
       <p className="text-sm text-muted">{customers.length} хэрэглэгч</p>
 
-      <div className="mt-4 grid gap-4 sm:grid-cols-4">
+      <div className="mt-4 grid grid-cols-2 gap-3 sm:grid-cols-4 sm:gap-4">
         {(["Bronze", "Silver", "Gold", "Platinum"] as const).map((t) => (
           <div key={t} className="rounded-xl border bg-surface p-4">
             <span className={classNames("rounded-full px-2.5 py-0.5 text-xs font-semibold", TIER_COLOR[t])}>{t}</span>
@@ -39,7 +39,30 @@ export default function AdminCustomers() {
         ))}
       </div>
 
-      <div className="mt-5 overflow-x-auto rounded-xl border bg-surface">
+      {/* Mobile cards */}
+      <div className="mt-5 space-y-3 md:hidden">
+        {customers.map((c) => (
+          <div key={c.email} className="rounded-xl border bg-surface p-4">
+            <div className="flex items-start justify-between gap-2">
+              <div className="min-w-0">
+                <p className="truncate font-medium">{c.name}</p>
+                <p className="truncate text-xs text-muted">{c.email}</p>
+                <p className="text-xs text-muted">{c.phone}</p>
+              </div>
+              <span className={classNames("shrink-0 rounded-full px-2.5 py-0.5 text-xs font-semibold", TIER_COLOR[tier(c.spent)])}>
+                {tier(c.spent)}
+              </span>
+            </div>
+            <div className="mt-3 flex items-center justify-between border-t pt-2 text-sm">
+              <span className="text-muted">{c.orders} захиалга</span>
+              <span className="font-semibold">{formatMNT(c.spent)}</span>
+            </div>
+          </div>
+        ))}
+      </div>
+
+      {/* Table (desktop) */}
+      <div className="mt-5 hidden overflow-x-auto rounded-xl border bg-surface md:block">
         <table className="w-full min-w-[640px] text-sm">
           <thead className="border-b bg-background text-left text-xs uppercase tracking-wider text-muted">
             <tr>

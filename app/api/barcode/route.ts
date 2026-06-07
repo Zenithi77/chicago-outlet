@@ -1,0 +1,201 @@
+import { NextResponse } from "next/server";
+
+// Maps common English colour names to a hex swatch so scanned items render nicely.
+const COLOR_HEX: Record<string, string> = {
+  black: "#1A1A1A",
+  white: "#F7F7F4",
+  red: "#E03131",
+  blue: "#1971C2",
+  navy: "#1F2A44",
+  green: "#2F9E44",
+  olive: "#5C6B2F",
+  yellow: "#F1C40F",
+  gold: "#C9A227",
+  orange: "#E8590C",
+  purple: "#7048E8",
+  pink: "#E64980",
+  brown: "#8B5E3C",
+  beige: "#E8DCC4",
+  cream: "#F3EAD3",
+  grey: "#868E96",
+  gray: "#868E96",
+  silver: "#C0C0C0",
+  charcoal: "#36393E",
+  burgundy: "#7B2233",
+  khaki: "#B6A271",
+  tan: "#C8A06B",
+};
+
+function colorToHex(name: string): string {
+  const key = name.trim().toLowerCase();
+  if (COLOR_HEX[key]) return COLOR_HEX[key];
+  const hit = Object.keys(COLOR_HEX).find((k) => key.includes(k));
+  return hit ? COLOR_HEX[hit] : "#3A3A3A";
+}
+
+// Pull recognisable apparel sizes out of a free-text size string.
+function parseSizes(raw: string): string[] {
+  if (!raw) return [];
+  const tokens = raw
+    .split(/[,/|]+/)
+    .map((s) => s.trim())
+    .filter(Boolean);
+  const canon = ["XXS", "XS", "S", "M", "L", "XL", "XXL", "XXXL"];
+  const out = new Set<string>();
+  for (const t of tokens) {
+    const up = t.toUpperCase().replace(/\s+/g, "");
+    if (canon.includes(up)) out.add(up);
+    else if (/^\d{2,3}$/.test(up)) out.add(up); // numeric (waist/EU) sizes
+    else if (up.length <= 4) out.add(up);
+  }
+  return [...out];
+}
+
+function splitColors(raw: string): { name: string; hex: string; stock: number }[] {
+  if (!raw) return [];
+  return raw
+    .split(/[,/|]+/)
+    .map((s) => s.trim())
+    .filter(Boolean)
+    .slice(0, 6)
+    .map((name) => ({ name, hex: colorToHex(name), stock: 0 }));
+}
+
+// A single product shape both providers normalise into.
+type RawItem = {
+  title?: string;
+  brand?: string;
+  description?: string;
+  category?: string;
+  color?: string;
+  size?: string;
+  images?: string[];
+};
+
+type Normalised = {
+  found: true;
+  barcode: string;
+  name: string;
+  brand: string;
+  subcategory: string;
+  description: string;
+  short_description: string;
+  sizes: string[];
+  colors: { name: string; hex: string; stock: number }[];
+  images: string[];
+  source: string;
+};
+
+function normalise(code: string, item: RawItem, source: string): Normalised {
+  const images = (item.images ?? []).filter(
+    (u) => typeof u === "string" && u.startsWith("http")
+  );
+  const description = item.description ?? "";
+  return {
+    found: true,
+    barcode: code,
+    name: item.title ?? "",
+    brand: item.brand ?? "",
+    subcategory: item.category?.split(">").pop()?.trim() ?? "",
+    description,
+    short_description: description.slice(0, 140),
+    sizes: parseSizes(item.size ?? ""),
+    colors: splitColors(item.color ?? ""),
+    images: images.slice(0, 6),
+    source,
+  };
+}
+
+// 1) Primary provider: Barcodelookup.com (needs BARCODELOOKUP_KEY).
+async function lookupBarcodeLookup(code: string): Promise<RawItem | null> {
+  const key = process.env.BARCODELOOKUP_KEY;
+  if (!key) return null; // skip silently if no key configured
+  const url = `https://api.barcodelookup.com/v3/products?barcode=${code}&formatted=y&key=${key}`;
+  const res = await fetch(url, { next: { revalidate: 86400 } });
+  if (!res.ok) return null;
+  const data: {
+    products?: {
+      title?: string;
+      brand?: string;
+      manufacturer?: string;
+      description?: string;
+      category?: string;
+      color?: string;
+      size?: string;
+      images?: string[];
+    }[];
+  } = await res.json();
+  const p = data.products?.[0];
+  if (!p) return null;
+  return {
+    title: p.title,
+    brand: p.brand || p.manufacturer,
+    description: p.description,
+    category: p.category,
+    color: p.color,
+    size: p.size,
+    images: p.images,
+  };
+}
+
+// 2) Fallback provider: UPCitemdb (free trial works without a key).
+async function lookupUpcItemDb(code: string): Promise<RawItem | null> {
+  const key = process.env.UPCITEMDB_KEY;
+  const endpoint = key
+    ? `https://api.upcitemdb.com/prod/v1/lookup?upc=${code}`
+    : `https://api.upcitemdb.com/prod/trial/lookup?upc=${code}`;
+  const res = await fetch(endpoint, {
+    headers: key ? { user_key: key, key_type: "3scale" } : {},
+    next: { revalidate: 86400 },
+  });
+  if (!res.ok) return null;
+  const data: { items?: RawItem[] } = await res.json();
+  return data.items?.[0] ?? null;
+}
+
+// GET /api/barcode?code=<ean/upc>
+// Tries Barcodelookup.com first, then falls back to UPCitemdb. Returns
+// normalised, price-free product fields ready to drop into the add-product form.
+export async function GET(request: Request) {
+  const code = new URL(request.url).searchParams.get("code")?.trim() ?? "";
+
+  if (!/^\d{6,14}$/.test(code)) {
+    return NextResponse.json(
+      { found: false, error: "Зөв штрих код оруулна уу." },
+      { status: 400 }
+    );
+  }
+
+  try {
+    // Primary: barcodelookup.com
+    let item: RawItem | null = null;
+    let source = "barcodelookup";
+    try {
+      item = await lookupBarcodeLookup(code);
+    } catch {
+      item = null;
+    }
+
+    // Fallback: UPCitemdb
+    if (!item) {
+      source = "upcitemdb";
+      try {
+        item = await lookupUpcItemDb(code);
+      } catch {
+        item = null;
+      }
+    }
+
+    if (!item || (!item.title && !item.brand)) {
+      // Not found anywhere — let the admin fill it in manually.
+      return NextResponse.json({ found: false, barcode: code });
+    }
+
+    return NextResponse.json(normalise(code, item, source));
+  } catch {
+    return NextResponse.json(
+      { found: false, error: "Сүлжээний алдаа. Дахин оролдоно уу." },
+      { status: 502 }
+    );
+  }
+}

@@ -54,7 +54,39 @@ export default function AdminOrders() {
         })}
       </div>
 
-      <div className="mt-4 overflow-x-auto rounded-xl border bg-surface">
+      {/* Mobile cards */}
+      <div className="mt-4 space-y-3 md:hidden">
+        {filtered.map((o) => (
+          <button
+            key={o.id}
+            onClick={() => setSelected(o)}
+            className="w-full rounded-xl border bg-surface p-4 text-left"
+          >
+            <div className="flex items-center justify-between gap-2">
+              <span className="font-mono text-xs font-semibold">{o.id}</span>
+              <span className={classNames("rounded-full px-2.5 py-1 text-xs font-semibold", statusMeta(o.status).color)}>
+                {statusMeta(o.status).label}
+              </span>
+            </div>
+            <p className="mt-2 text-sm font-medium">{o.customer.name}</p>
+            <p className="text-xs text-muted">{formatDate(o.createdAt)} · {o.items.reduce((n, i) => n + i.qty, 0)} ширхэг</p>
+            <div className="mt-2 flex items-center justify-between">
+              <span className={classNames("rounded-full px-2 py-0.5 text-xs", o.paymentStatus === "paid" ? "bg-success/15 text-success" : "bg-accent/20 text-accent-dark")}>
+                {o.paymentStatus === "paid" ? "Төлсөн" : "Хүлээгдэж буй"}
+              </span>
+              <span className="font-semibold">{formatMNT(o.total)}</span>
+            </div>
+          </button>
+        ))}
+        {filtered.length === 0 && (
+          <p className="rounded-xl border bg-surface px-4 py-10 text-center text-sm text-muted">
+            Захиалга алга.
+          </p>
+        )}
+      </div>
+
+      {/* Table (desktop) */}
+      <div className="mt-4 hidden overflow-x-auto rounded-xl border bg-surface md:block">
         <table className="w-full min-w-[720px] text-sm">
           <thead className="border-b bg-background text-left text-xs uppercase tracking-wider text-muted">
             <tr>
