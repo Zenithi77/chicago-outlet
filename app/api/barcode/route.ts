@@ -161,7 +161,7 @@ export async function GET(request: Request) {
 
   if (!/^\d{6,14}$/.test(code)) {
     return NextResponse.json(
-      { found: false, error: "Зөв штрих код оруулна уу." },
+      { found: false, error: "Зөв Barcode  оруулна уу." },
       { status: 400 }
     );
   }

@@ -53,7 +53,7 @@ export function BarcodeScanner({
   return (
     <div className="fixed inset-0 z-[60] flex flex-col bg-black/95">
       <div className="flex items-center justify-between px-5 py-4 text-white">
-        <span className="text-sm font-semibold">Штрих код уншуулах</span>
+        <span className="text-sm font-semibold">Barcode  уншуулах</span>
         <button
           onClick={onClose}
           className="rounded-full bg-white/15 px-4 py-1.5 text-sm hover:bg-white/25"
@@ -83,7 +83,7 @@ export function BarcodeScanner({
       </div>
 
       <p className="px-6 py-5 text-center text-xs text-white/70">
-        Барааны штрих кодыг хүрээн дотор байрлуулна уу — автоматаар уншина.
+        Барааны Barcode ыг хүрээн дотор байрлуулна уу — автоматаар уншина.
       </p>
     </div>
   );
