@@ -2,11 +2,13 @@
 
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { BRAND } from "@/lib/brand";
 import { CATEGORIES } from "@/lib/data/categories";
+import { PRODUCTS } from "@/lib/data/products";
 import { useCart } from "@/lib/store/cart";
-import { classNames } from "@/lib/utils";
+import { classNames, finalPrice, formatMNT } from "@/lib/utils";
+import { ProductImage } from "./ProductImage";
 import {
   SearchIcon,
   BagIcon,
@@ -41,8 +43,44 @@ export function Header() {
   const [scrolled, setScrolled] = useState(false);
   const [announce, setAnnounce] = useState(0);
   const [query, setQuery] = useState("");
+  const searchInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => setMounted(true), []);
+
+  // Live results as the visitor types.
+  const results = useMemo(() => {
+    const q = query.trim().toLowerCase();
+    if (!q) return [];
+    return PRODUCTS.filter((p) => p.isActive)
+      .filter((p) =>
+        [p.name, p.brand, p.category, p.subcategory, ...(p.tags ?? [])]
+          .join(" ")
+          .toLowerCase()
+          .includes(q)
+      )
+      .slice(0, 6);
+  }, [query]);
+
+  const featured = useMemo(
+    () => PRODUCTS.filter((p) => p.isActive && p.isFeatured).slice(0, 4),
+    []
+  );
+
+  // Focus the field, lock scroll and wire ESC while the overlay is open.
+  useEffect(() => {
+    if (!searchOpen) return;
+    const t = setTimeout(() => searchInputRef.current?.focus(), 140);
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape") setSearchOpen(false);
+    };
+    document.addEventListener("keydown", onKey);
+    document.body.style.overflow = "hidden";
+    return () => {
+      clearTimeout(t);
+      document.removeEventListener("keydown", onKey);
+      document.body.style.overflow = "";
+    };
+  }, [searchOpen]);
 
   useEffect(() => {
     const onScroll = () => setScrolled(window.scrollY > 8);
@@ -156,16 +194,16 @@ export function Header() {
             <Link
               href="/account"
               className="hidden rounded-full p-2 transition hover:bg-background sm:block"
-              aria-label="Бүртгэл"
-            >
-              <UserIcon />
-            </Link>
-            <Link
-              href="/account"
-              className="hidden rounded-full p-2 transition hover:bg-background sm:block"
               aria-label="Хүслийн жагсаалт"
             >
               <HeartIcon />
+            </Link>
+            <Link
+              href="/account"
+              className="rounded-full p-2 transition hover:bg-background"
+              aria-label="Бүртгэл"
+            >
+              <UserIcon />
             </Link>
             <button
               type="button"
@@ -219,31 +257,160 @@ export function Header() {
         </div>
       </div>
 
-      {/* Expandable search bar */}
+      {/* Search overlay */}
       <div
         className={classNames(
-          "overflow-hidden border-b bg-surface transition-all duration-300",
-          searchOpen ? "max-h-24 opacity-100" : "max-h-0 border-b-0 opacity-0"
+          "fixed inset-0 z-50 transition-opacity duration-300",
+          searchOpen ? "pointer-events-auto opacity-100" : "pointer-events-none opacity-0"
         )}
+        aria-hidden={!searchOpen}
       >
-        <form onSubmit={search} className="container-page flex items-center gap-3 py-4">
-          <SearchIcon className="text-muted" />
-          <input
-            autoFocus={searchOpen}
-            value={query}
-            onChange={(e) => setQuery(e.target.value)}
-            placeholder="Бараа, ангилал хайх..."
-            className="w-full bg-transparent text-base outline-none placeholder:text-muted"
-          />
-          <button
-            type="button"
-            onClick={() => setSearchOpen(false)}
-            aria-label="Хаах"
-            className="p-1 text-muted hover:text-foreground"
-          >
-            <CloseIcon />
-          </button>
-        </form>
+        {/* Backdrop */}
+        <div
+          className="absolute inset-0 bg-foreground/30 backdrop-blur-sm"
+          onClick={() => setSearchOpen(false)}
+        />
+        {/* Panel slides down from the top */}
+        <div
+          className={classNames(
+            "relative w-full border-b bg-surface shadow-[0_30px_60px_-30px_rgba(0,0,0,0.4)] transition-transform duration-300 ease-out",
+            searchOpen ? "translate-y-0" : "-translate-y-6"
+          )}
+        >
+          <div className="container-page py-5 sm:py-6">
+            {/* Search bar grows from the centre outwards */}
+            <form
+              onSubmit={search}
+              className={classNames(
+                "mx-auto flex items-center gap-3 rounded-full border bg-background px-5 py-3.5 shadow-sm transition-all duration-500 ease-out",
+                searchOpen ? "max-w-3xl opacity-100" : "max-w-[18rem] opacity-0"
+              )}
+            >
+              <SearchIcon className="shrink-0 text-muted" />
+              <input
+                ref={searchInputRef}
+                value={query}
+                onChange={(e) => setQuery(e.target.value)}
+                placeholder="Бараа, брэнд, ангилал хайх..."
+                className="w-full bg-transparent text-base outline-none placeholder:text-muted"
+              />
+              {query && (
+                <button
+                  type="button"
+                  onClick={() => setQuery("")}
+                  aria-label="Цэвэрлэх"
+                  className="shrink-0 text-muted transition hover:text-foreground"
+                >
+                  <CloseIcon />
+                </button>
+              )}
+              <button
+                type="button"
+                onClick={() => setSearchOpen(false)}
+                aria-label="Хаах"
+                className="ml-1 hidden shrink-0 rounded-full border px-3 py-1 text-[11px] font-medium tracking-wide text-muted transition hover:text-foreground sm:block"
+              >
+                ESC
+              </button>
+            </form>
+
+            {/* Live results */}
+            <div
+              className={classNames(
+                "mx-auto mt-5 max-w-3xl transition-all duration-500",
+                searchOpen ? "translate-y-0 opacity-100" : "translate-y-2 opacity-0"
+              )}
+            >
+              {query.trim() === "" ? (
+                <div className="space-y-6">
+                  <div>
+                    <p className="mb-3 text-[11px] font-semibold uppercase tracking-wider text-muted">
+                      Эрэлттэй хайлт
+                    </p>
+                    <div className="flex flex-wrap gap-2">
+                      {GENDER_LINKS.map((g) => (
+                        <button
+                          key={g.value}
+                          type="button"
+                          onClick={() => {
+                            router.push(`/shop?gender=${g.value}`);
+                            setSearchOpen(false);
+                          }}
+                          className={classNames(
+                            "rounded-full border px-4 py-1.5 text-sm transition hover:border-foreground",
+                            g.accent ? "text-danger" : ""
+                          )}
+                        >
+                          {g.label}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                  <div>
+                    <p className="mb-3 text-[11px] font-semibold uppercase tracking-wider text-muted">
+                      Онцлох бараа
+                    </p>
+                    <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
+                      {featured.map((p) => (
+                        <Link
+                          key={p.id}
+                          href={`/product/${p.slug}`}
+                          onClick={() => setSearchOpen(false)}
+                          className="group rounded-xl p-2 transition hover:bg-background"
+                        >
+                          <ProductImage
+                            seed={p.images[0]}
+                            label={p.name}
+                            className="aspect-square w-full rounded-lg"
+                          />
+                          <p className="mt-2 truncate text-xs font-medium">{p.name}</p>
+                          <p className="text-xs text-muted">{formatMNT(finalPrice(p))}</p>
+                        </Link>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+              ) : results.length === 0 ? (
+                <p className="py-10 text-center text-sm text-muted">
+                  «{query}» — илэрц олдсонгүй.
+                </p>
+              ) : (
+                <div className="space-y-1">
+                  {results.map((p) => (
+                    <Link
+                      key={p.id}
+                      href={`/product/${p.slug}`}
+                      onClick={() => setSearchOpen(false)}
+                      className="flex items-center gap-4 rounded-xl p-2 transition hover:bg-background"
+                    >
+                      <ProductImage
+                        seed={p.images[0]}
+                        label={p.name}
+                        className="h-14 w-14 shrink-0 rounded-lg"
+                      />
+                      <div className="min-w-0 flex-1">
+                        <p className="truncate text-sm font-medium">{p.name}</p>
+                        <p className="truncate text-xs text-muted">
+                          {p.brand} · {p.subcategory}
+                        </p>
+                      </div>
+                      <span className="shrink-0 text-sm font-semibold">
+                        {formatMNT(finalPrice(p))}
+                      </span>
+                    </Link>
+                  ))}
+                  <button
+                    type="button"
+                    onClick={search}
+                    className="mt-2 w-full rounded-xl bg-foreground py-3 text-sm font-medium text-white transition hover:bg-foreground/90"
+                  >
+                    «{query}» бүх илэрцийг харах
+                  </button>
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
       </div>
 
       {/* Mobile drawer */}
@@ -304,15 +471,6 @@ export function Header() {
               {c.nameMn}
             </Link>
           ))}
-        </div>
-        <div className="border-t px-5 py-4">
-          <Link
-            href="/account"
-            onClick={() => setMenuOpen(false)}
-            className="flex items-center gap-2 py-2 text-sm font-medium"
-          >
-            <UserIcon /> Миний бүртгэл
-          </Link>
         </div>
       </aside>
     </header>
