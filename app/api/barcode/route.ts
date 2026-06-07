@@ -61,7 +61,7 @@ function splitColors(raw: string): { name: string; hex: string; stock: number }[
     .map((name) => ({ name, hex: colorToHex(name), stock: 0 }));
 }
 
-// A single product shape both providers normalise into.
+// A single product shape all providers normalise into.
 type RawItem = {
   title?: string;
   brand?: string;
@@ -70,6 +70,11 @@ type RawItem = {
   color?: string;
   size?: string;
   images?: string[];
+  // barcodelookup.com extra fields
+  gender?: string;
+  material?: string;
+  features?: string[];
+  age_group?: string;
 };
 
 type Normalised = {
@@ -80,17 +85,40 @@ type Normalised = {
   subcategory: string;
   description: string;
   short_description: string;
+  material: string;
+  gender: string;
   sizes: string[];
   colors: { name: string; hex: string; stock: number }[];
   images: string[];
   source: string;
 };
 
+// Map barcodelookup gender values → our select values.
+function normaliseGender(raw?: string): string {
+  if (!raw) return "";
+  const g = raw.toLowerCase().trim();
+  if (g.includes("female") || g.includes("women") || g.includes("girl")) return "women";
+  if (g.includes("male") || g.includes("men") || g.includes("boy")) return "men";
+  if (g.includes("kid") || g.includes("child") || g.includes("infant") || g.includes("baby")) return "kids";
+  if (g.includes("unisex")) return "unisex";
+  return "";
+}
+
 function normalise(code: string, item: RawItem, source: string): Normalised {
   const images = (item.images ?? []).filter(
     (u) => typeof u === "string" && u.startsWith("http")
   );
-  const description = item.description ?? "";
+
+  // Build description: base + features list.
+  let description = item.description ?? "";
+  if (item.features?.length) {
+    const feat = item.features.map((f) => `• ${f}`).join("\n");
+    description = description ? `${description}\n\n${feat}` : feat;
+  }
+
+  // age_group can override gender (e.g. "newborn" → kids).
+  const gender = normaliseGender(item.gender) || normaliseGender(item.age_group);
+
   return {
     found: true,
     barcode: code,
@@ -98,10 +126,12 @@ function normalise(code: string, item: RawItem, source: string): Normalised {
     brand: item.brand ?? "",
     subcategory: item.category?.split(">").pop()?.trim() ?? "",
     description,
-    short_description: description.slice(0, 140),
+    short_description: (item.description ?? "").slice(0, 140),
+    material: item.material ?? "",
+    gender,
     sizes: parseSizes(item.size ?? ""),
     colors: splitColors(item.color ?? ""),
-    images: images.slice(0, 6),
+    images: images.slice(0, 8),
     source,
   };
 }
@@ -129,6 +159,7 @@ async function lookupBarcodeLookup(code: string): Promise<RawItem | null> {
   }
   const data: {
     products?: {
+      barcode_number?: string;
       title?: string;
       brand?: string;
       manufacturer?: string;
@@ -136,6 +167,10 @@ async function lookupBarcodeLookup(code: string): Promise<RawItem | null> {
       category?: string;
       color?: string;
       size?: string;
+      gender?: string;
+      material?: string;
+      age_group?: string;
+      features?: string[];
       images?: string[];
     }[];
   } = await res.json();
@@ -148,6 +183,10 @@ async function lookupBarcodeLookup(code: string): Promise<RawItem | null> {
     category: p.category,
     color: p.color,
     size: p.size,
+    gender: p.gender,
+    material: p.material,
+    age_group: p.age_group,
+    features: p.features,
     images: p.images,
   };
 }

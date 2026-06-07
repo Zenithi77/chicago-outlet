@@ -396,6 +396,7 @@ function ProductForm({
     description?: string;
     short_description?: string;
     material?: string;
+    gender?: string;
     sizes?: string[];
     colors?: { name: string; hex: string; stock: number }[];
     images?: string[];
@@ -429,6 +430,7 @@ function ProductForm({
         brand: data.brand || prev.brand,
         subcategory: data.subcategory || prev.subcategory,
         material: data.material || prev.material,
+        gender: data.gender || prev.gender,
         sizes: data.sizes?.length ? data.sizes.join(", ") : prev.sizes,
         images: data.images?.length ? data.images.join(", ") : prev.images,
         colors: data.colors?.length
@@ -437,9 +439,16 @@ function ProductForm({
         short_description: data.short_description || prev.short_description,
         description: data.description || prev.description,
       }));
+      const filled: string[] = [];
+      if (data.name) filled.push("нэр");
+      if (data.gender) filled.push("хүйс");
+      if (data.material) filled.push("материал");
+      if (data.colors?.length) filled.push("өнгө");
+      if (data.sizes?.length) filled.push("хэмжээ");
+      if (data.images?.length) filled.push("зураг");
       setLookupMsg({
         ok: true,
-        text: "Мэдээлэл татагдлаа. Үнэ болон нөөцийг нэмнэ үү.",
+        text: `Татагдлаа${filled.length ? ` (${filled.join(", ")})` : ""}. Үнэ болон нөөцийг нэмнэ үү.`,
       });
     } catch {
       setLookupMsg({ ok: false, text: "Сүлжээний алдаа. Дахин оролдоно уу." });
