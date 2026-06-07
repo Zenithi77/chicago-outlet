@@ -144,7 +144,7 @@ export function HeroVideo() {
             хугацааг даван туулах загвар.
           </p>
 
-          <div className="mt-3 flex flex-row flex-wrap gap-2 sm:mt-8 sm:gap-3">
+          <div className="mt-3 hidden flex-row flex-wrap gap-2 sm:mt-8 sm:flex sm:gap-3">
             <Link
               href="/shop"
               className="rounded-md bg-accent px-4 py-2 text-center text-xs font-semibold text-foreground transition hover:bg-white sm:px-7 sm:py-3 sm:text-sm"
