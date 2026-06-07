@@ -3,6 +3,13 @@
 export type Gender = "men" | "women" | "unisex" | "kids";
 export type Fit = "slim" | "regular" | "relaxed" | "oversized";
 export type Currency = "MNT" | "USD";
+export type Branch = "park_od" | "riveria" | "online";
+
+export const BRANCH_LABELS: Record<Branch, string> = {
+  park_od: "Park-Od",
+  riveria: "Riveria",
+  online: "Захиалга",
+};
 
 export interface ProductColor {
   name: string;
@@ -39,6 +46,7 @@ export interface Product {
   rating: number;
   reviewCount: number;
   totalStock: number;
+  branch?: Branch;  // which store location carries this product
   createdAt: string;
 }
 

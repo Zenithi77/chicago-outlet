@@ -74,6 +74,23 @@ export function ProductCard({ product }: { product: Product }) {
         >
           {product.name}
         </Link>
+        {/* Branch badge */}
+        {(product as { branch?: string }).branch && (
+          <span className={classNames(
+            "mt-1 inline-block w-fit rounded px-1.5 py-0.5 text-[10px] font-semibold",
+            (product as { branch?: string }).branch === "park_od"
+              ? "bg-blue-50 text-blue-600"
+              : (product as { branch?: string }).branch === "riveria"
+              ? "bg-purple-50 text-purple-600"
+              : "bg-amber-50 text-amber-600"
+          )}>
+            {(product as { branch?: string }).branch === "park_od"
+              ? "Park-Od"
+              : (product as { branch?: string }).branch === "riveria"
+              ? "Riveria"
+              : "Захиалга"}
+          </span>
+        )}
         <div className="mt-1 flex items-center gap-1 text-xs text-muted">
           <StarIcon className="h-3.5 w-3.5 text-accent-dark" />
           <span>{product.rating.toFixed(1)}</span>

@@ -48,6 +48,10 @@ do $$ begin
   create type user_role as enum ('admin', 'manager', 'staff', 'customer');
 exception when duplicate_object then null; end $$;
 
+do $$ begin
+  create type branch as enum ('park_od', 'riveria', 'online');
+exception when duplicate_object then null; end $$;
+
 -- ── Categories ──────────────────────────────────────────────────────────────
 create table if not exists categories (
   id          uuid primary key default gen_random_uuid(),
@@ -90,12 +94,14 @@ create table if not exists products (
   rating            numeric(2, 1) not null default 0,
   review_count      int not null default 0,
   total_stock       int not null default 0,
+  branch            branch not null default 'online',
   created_at        timestamptz not null default now(),
   updated_at        timestamptz not null default now()
 );
 
 create index if not exists products_category_idx on products (category);
 create index if not exists products_gender_idx   on products (gender);
+create index if not exists products_branch_idx   on products (branch);
 create index if not exists products_active_idx   on products (is_active);
 create index if not exists products_tags_idx     on products using gin (tags);
 
@@ -175,6 +181,7 @@ create table if not exists profiles (
   full_name  text not null default '',
   phone      text,
   role       user_role not null default 'customer',
+  branch     branch,          -- null = admin (sees all); set for branch staff
   created_at timestamptz not null default now()
 );
 
@@ -210,6 +217,24 @@ returns boolean language sql security definer stable set search_path = public as
   select exists (
     select 1 from public.profiles
     where id = auth.uid() and role = 'admin'
+  )
+$$;
+
+-- Returns the branch the current staff user belongs to (null = admin/sees all).
+create or replace function public.my_branch()
+returns branch language sql security definer stable set search_path = public as $$
+  select branch from public.profiles where id = auth.uid()
+$$;
+
+-- Staff can see/edit products in their own branch OR online products.
+-- Admins (branch IS NULL) see everything.
+create or replace function public.can_manage_product(product_branch branch)
+returns boolean language sql security definer stable set search_path = public as $$
+  select exists (
+    select 1 from public.profiles
+    where id = auth.uid()
+      and role in ('admin', 'manager', 'staff')
+      and (branch is null or branch = product_branch or product_branch = 'online')
   )
 $$;
 
@@ -250,13 +275,31 @@ create policy "public read active coupons" on coupons for select using (is_activ
 -- The service-role key bypasses RLS, so server-side inserts still work.
 
 -- ── Staff access (admin / manager / staff) ──────────────────────────────────
--- Staff can read everything (including inactive rows) and manage catalog data.
+-- Staff can read products in their branch (+ online). Admins read all.
 drop policy if exists "staff read all products" on products;
-create policy "staff read all products" on products for select using (public.is_staff());
+create policy "staff read all products" on products for select
+  using (public.can_manage_product(branch));
 
+-- Staff can only write to their own branch. Admins write everywhere.
+-- 'online' products: any staff can read but only admin/manager can write.
 drop policy if exists "staff manage products" on products;
 create policy "staff manage products" on products for all
-  using (public.is_staff()) with check (public.is_staff());
+  using (
+    exists (
+      select 1 from public.profiles p
+      where p.id = auth.uid()
+        and p.role in ('admin', 'manager', 'staff')
+        and (p.branch is null or p.branch = products.branch)
+    )
+  )
+  with check (
+    exists (
+      select 1 from public.profiles p
+      where p.id = auth.uid()
+        and p.role in ('admin', 'manager', 'staff')
+        and (p.branch is null or p.branch = branch)
+    )
+  );
 
 drop policy if exists "staff manage categories" on categories;
 create policy "staff manage categories" on categories for all

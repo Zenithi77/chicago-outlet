@@ -124,6 +124,7 @@ export async function createProduct(
     season: String(formData.get("season") ?? "all-season").trim() || "all-season",
     collection: String(formData.get("collection") ?? "").trim(),
     total_stock: totalStock,
+    branch: String(formData.get("branch") ?? "online") as "park_od" | "riveria" | "online",
   };
 
   const { error } = await supabase.from("products").insert(row);

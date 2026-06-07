@@ -18,12 +18,11 @@ export default function HomePage() {
 
       {/* Category grid */}
       <section className="container-page py-14">
-        <div className="grid grid-cols-2 gap-3 md:grid-cols-4">
+        <div className="grid grid-cols-3 gap-3">
           {[
-            { label: "Эрэгтэй", href: "/shop?gender=men", seed: "cat-men" },
-            { label: "Эмэгтэй", href: "/shop?gender=women", seed: "cat-women" },
-            { label: "Юнисекс", href: "/shop?gender=unisex", seed: "cat-unisex" },
-            { label: "Хямдрал", href: "/shop?gender=sale", seed: "cat-sale" },
+            { label: "Park-Od Mall", href: "/shop?branch=park_od", seed: "cat-park-od", sub: "УБ, Сүхбаатар дүүрэг" },
+            { label: "Parko Riveria", href: "/shop?branch=riveria", seed: "cat-riveria", sub: "УБ, Чингэлтэй дүүрэг" },
+            { label: "Захиалга", href: "/shop?branch=online", seed: "cat-online", sub: "Хаана ч хүргэлттэй" },
           ].map((c) => (
             <Link
               key={c.label}
@@ -31,10 +30,13 @@ export default function HomePage() {
               className="group relative aspect-[3/4] overflow-hidden rounded-lg"
             >
               <ProductImage seed={c.seed} label={c.label} className="h-full w-full transition-transform duration-500 group-hover:scale-105" />
-              <div className="absolute inset-0 bg-black/25 transition group-hover:bg-black/40" />
-              <span className="absolute bottom-4 left-4 font-serif text-xl font-semibold text-white">
-                {c.label}
-              </span>
+              <div className="absolute inset-0 bg-black/30 transition group-hover:bg-black/45" />
+              <div className="absolute bottom-4 left-4">
+                <span className="block font-serif text-xl font-semibold text-white">
+                  {c.label}
+                </span>
+                <span className="block text-xs text-white/70 mt-0.5">{c.sub}</span>
+              </div>
             </Link>
           ))}
         </div>

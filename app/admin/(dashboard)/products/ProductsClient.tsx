@@ -54,6 +54,7 @@ export type ProductRow = {
   name: string;
   category: string;
   gender: string;
+  branch: "park_od" | "riveria" | "online";
   price: number;
   discountPercent: number;
   totalStock: number;
@@ -75,6 +76,7 @@ export function ProductsClient({
 }) {
   const router = useRouter();
   const [search, setSearch] = useState("");
+  const [branchFilter, setBranchFilter] = useState<"" | "park_od" | "riveria" | "online">("");
   const [catFilter, setCatFilter] = useState("");
   const [stockFilter, setStockFilter] = useState("");
   const [showForm, setShowForm] = useState(false);
@@ -95,6 +97,7 @@ export function ProductsClient({
           !r.sku.toLowerCase().includes(search.toLowerCase())
         )
           return false;
+        if (branchFilter && r.branch !== branchFilter) return false;
         if (catFilter && r.category !== catFilter) return false;
         if (stockFilter === "out" && r.totalStock > 0) return false;
         if (stockFilter === "low" && (r.totalStock === 0 || r.totalStock > 5))
@@ -102,7 +105,7 @@ export function ProductsClient({
         if (stockFilter === "in" && r.totalStock <= 5) return false;
         return true;
       }),
-    [initial, search, catFilter, stockFilter]
+    [initial, search, branchFilter, catFilter, stockFilter]
   );
 
   const persist = (
@@ -197,7 +200,29 @@ export function ProductsClient({
       )}
 
       {/* Шүүлтүүрүүд */}
-      <div className="mt-5 flex flex-wrap gap-3">
+      <div className="mt-5 space-y-3">
+        {/* Branch tabs */}
+        <div className="flex gap-1 rounded-lg border bg-surface p-1 w-fit">
+          {(["", "park_od", "riveria", "online"] as const).map((b) => {
+            const label = b === "" ? "Бүгд" : b === "park_od" ? "Park-Od" : b === "riveria" ? "Riveria" : "Захиалга";
+            return (
+              <button
+                key={b}
+                onClick={() => setBranchFilter(b)}
+                className={classNames(
+                  "rounded-md px-4 py-1.5 text-sm font-medium transition",
+                  branchFilter === b
+                    ? "bg-foreground text-white"
+                    : "text-muted hover:text-foreground"
+                )}
+              >
+                {label}
+              </button>
+            );
+          })}
+        </div>
+        {/* Other filters */}
+        <div className="flex flex-wrap gap-3">
         <input
           value={search}
           onChange={(e) => setSearch(e.target.value)}
@@ -226,6 +251,7 @@ export function ProductsClient({
           <option value="low">Цөөн (≤5)</option>
           <option value="out">Дууссан</option>
         </select>
+        </div>
       </div>
 
       {/* Мобайл карт */}
@@ -244,6 +270,14 @@ export function ProductsClient({
                 <p className="truncate font-medium">{r.name}</p>
                 <p className="font-mono text-xs text-muted">{r.sku}</p>
                 <p className="text-xs text-muted">{r.category}</p>
+                <span className={classNames(
+                  "mt-1 inline-block rounded px-1.5 py-0.5 text-[10px] font-semibold",
+                  r.branch === "park_od" ? "bg-blue-100 text-blue-700" :
+                  r.branch === "riveria" ? "bg-purple-100 text-purple-700" :
+                  "bg-amber-100 text-amber-700"
+                )}>
+                  {r.branch === "park_od" ? "Park-Od" : r.branch === "riveria" ? "Riveria" : "Захиалга"}
+                </span>
               </div>
               <button
                 onClick={() => persist(() => toggleProductActive(r.id, !r.isActive))}
@@ -314,6 +348,7 @@ export function ProductsClient({
             <tr>
               <th className="px-4 py-3">Бараа</th>
               <th className="px-4 py-3">SKU</th>
+              <th className="px-4 py-3">Салбар</th>
               <th className="px-4 py-3">Ангилал</th>
               <th className="px-4 py-3">Үнэ</th>
               <th className="px-4 py-3">Нөөц</th>
@@ -337,6 +372,16 @@ export function ProductsClient({
                 </td>
                 <td className="px-4 py-3 font-mono text-xs text-muted">
                   {r.sku}
+                </td>
+                <td className="px-4 py-3">
+                  <span className={classNames(
+                    "rounded px-2 py-0.5 text-xs font-semibold",
+                    r.branch === "park_od" ? "bg-blue-100 text-blue-700" :
+                    r.branch === "riveria" ? "bg-purple-100 text-purple-700" :
+                    "bg-amber-100 text-amber-700"
+                  )}>
+                    {r.branch === "park_od" ? "Park-Od" : r.branch === "riveria" ? "Riveria" : "Захиалга"}
+                  </span>
                 </td>
                 <td className="px-4 py-3">{r.category}</td>
                 <td className="px-4 py-3">
@@ -394,7 +439,7 @@ export function ProductsClient({
             {filtered.length === 0 && !loadError && (
               <tr>
                 <td
-                  colSpan={6}
+                  colSpan={7}
                   className="px-4 py-10 text-center text-sm text-muted"
                 >
                   Бараа алга. &ldquo;+ Шинэ бараа&rdquo; дарж нэмнэ үү.
@@ -433,6 +478,7 @@ function ProductForm({
     category: categories[0]?.name ?? "",
     subcategory: "",
     gender: "unisex",
+    branch: "online",
     fit: "regular",
     price: "",
     discount_percent: "0",
@@ -901,6 +947,21 @@ function ProductForm({
           </select>
         </label>
       )}
+
+      {/* Салбар */}
+      <label className="block">
+        <span className={lbl}>Салбар *</span>
+        <select
+          name="branch"
+          className={field}
+          value={v.branch}
+          onChange={(e) => set("branch", e.target.value)}
+        >
+          <option value="park_od">Park-Od Mall</option>
+          <option value="riveria">Parko Riveria</option>
+          <option value="online">Захиалга (онлайн)</option>
+        </select>
+      </label>
       {isApparel && (
         <label className="block">
           <span className={lbl}>Загвар (fit)</span>

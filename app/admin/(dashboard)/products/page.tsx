@@ -9,7 +9,7 @@ export default async function AdminProductsPage() {
   const { data, error } = await supabase
     .from("products")
     .select(
-      "id, sku, name, category, gender, price, discount_percent, total_stock, is_active, images, collection"
+      "id, sku, name, category, gender, branch, price, discount_percent, total_stock, is_active, images, collection"
     )
     .order("created_at", { ascending: false });
 
@@ -19,6 +19,7 @@ export default async function AdminProductsPage() {
     name: p.name as string,
     category: (p.category as string) ?? "",
     gender: (p.gender as string) ?? "unisex",
+    branch: ((p.branch as string) ?? "online") as "park_od" | "riveria" | "online",
     price: Number(p.price ?? 0),
     discountPercent: Number(p.discount_percent ?? 0),
     totalStock: Number(p.total_stock ?? 0),

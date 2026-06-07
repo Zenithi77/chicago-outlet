@@ -24,10 +24,12 @@ function ShopContent() {
   const params = useSearchParams();
   const q = params.get("q")?.toLowerCase() ?? "";
   const genderParam = params.get("gender") ?? "";
+  const branchParam = params.get("branch") ?? "";
   const categoryParam = params.get("category") ?? "";
   const collectionParam = params.get("collection") ?? "";
 
   const [sort, setSort] = useState("relevance");
+  const [activeBranch, setActiveBranch] = useState<string>(branchParam);
   const [activeCats, setActiveCats] = useState<string[]>(
     categoryParam ? [categoryParam] : []
   );
@@ -50,6 +52,9 @@ function ShopContent() {
           p.category.toLowerCase().includes(q) ||
           p.subcategory.toLowerCase().includes(q)
       );
+    }
+    if (activeBranch) {
+      list = list.filter((p) => (p as { branch?: string }).branch === activeBranch);
     }
     if (genderParam === "sale") {
       list = list.filter((p) => p.isOnSale);
@@ -89,20 +94,44 @@ function ShopContent() {
         break;
     }
     return sorted;
-  }, [q, genderParam, collectionParam, activeCats, activeSizes, maxPrice, inStockOnly, sort]);
+  }, [q, activeBranch, genderParam, collectionParam, activeCats, activeSizes, maxPrice, inStockOnly, sort]);
 
+  const branchLabel = activeBranch === "park_od" ? "Park-Od Mall" : activeBranch === "riveria" ? "Parko Riveria" : activeBranch === "online" ? "Захиалга" : "";
   const title = q
     ? `"${q}" хайлтын үр дүн`
-    : collectionParam || categoryParam || (genderParam === "sale" ? "Хямдрал" : "Бүх бараа");
+    : branchLabel || collectionParam || categoryParam || (genderParam === "sale" ? "Хямдрал" : "Бүх бараа");
 
   return (
     <div className="container-page py-8">
-      <div className="mb-6 flex flex-col gap-1">
+      <div className="mb-4 flex flex-col gap-1">
         <p className="text-xs uppercase tracking-wider text-muted">
           Нүүр / Дэлгүүр
         </p>
-        <h1 className="font-serif text-3xl font-bold capitalize">{title}</h1>
+        <h1 className="font-serif text-3xl font-bold capitalize">{title || "Бүх бараа"}</h1>
         <p className="text-sm text-muted">{filtered.length} бараа олдлоо</p>
+      </div>
+
+      {/* Branch tabs */}
+      <div className="mb-5 flex gap-2">
+        {([
+          { value: "", label: "Бүгд" },
+          { value: "park_od", label: "Park-Od Mall" },
+          { value: "riveria", label: "Parko Riveria" },
+          { value: "online", label: "Захиалга" },
+        ] as const).map((b) => (
+          <button
+            key={b.value}
+            onClick={() => setActiveBranch(b.value)}
+            className={classNames(
+              "rounded-full border px-4 py-1.5 text-sm font-medium transition",
+              activeBranch === b.value
+                ? "border-foreground bg-foreground text-white"
+                : "border-border text-muted hover:border-foreground hover:text-foreground"
+            )}
+          >
+            {b.label}
+          </button>
+        ))}
       </div>
 
       <div className="flex items-center justify-between border-y py-3 md:hidden">
