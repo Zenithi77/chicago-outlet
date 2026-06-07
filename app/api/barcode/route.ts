@@ -112,9 +112,21 @@ async function lookupBarcodeLookup(code: string): Promise<RawItem | null> {
   if (!key) return null; // skip silently if no key configured
   const url = `https://api.barcodelookup.com/v3/products?barcode=${code}&formatted=y&key=${key}`;
   const ctrl = new AbortController();
-  const t = setTimeout(() => ctrl.abort(), 3500);
-  const res = await fetch(url, { next: { revalidate: 86400 }, signal: ctrl.signal }).finally(() => clearTimeout(t));
-  if (!res.ok) return null;
+  const t = setTimeout(() => ctrl.abort(), 8000);
+  let res: Response;
+  try {
+    res = await fetch(url, { cache: "no-store", signal: ctrl.signal });
+  } finally {
+    clearTimeout(t);
+  }
+  if (!res.ok) {
+    console.error(
+      "[barcode] barcodelookup.com non-OK",
+      res.status,
+      await res.text().catch(() => "")
+    );
+    return null;
+  }
   const data: {
     products?: {
       title?: string;
@@ -158,8 +170,44 @@ async function lookupUpcItemDb(code: string): Promise<RawItem | null> {
   return data.items?.[0] ?? null;
 }
 
+// 3) Fallback provider: go-upc.com (public, no key needed for occasional use).
+async function lookupGoUpc(code: string): Promise<RawItem | null> {
+  const ctrl = new AbortController();
+  const t = setTimeout(() => ctrl.abort(), 4500);
+  const res = await fetch(`https://go-upc.com/api/v1/code/${code}`, {
+    next: { revalidate: 86400 },
+    signal: ctrl.signal,
+    headers: { "user-agent": "ChicagoOutlet/1.0" },
+  }).finally(() => clearTimeout(t));
+  if (!res.ok) return null;
+  const data: {
+    product?: {
+      name?: string;
+      brand?: string;
+      description?: string;
+      category?: string;
+      imageUrl?: string;
+      specs?: [string, string][];
+    };
+  } = await res.json();
+  const p = data.product;
+  if (!p) return null;
+  const specs = p.specs ?? [];
+  const findSpec = (re: RegExp) =>
+    specs.find(([k]) => re.test(k))?.[1] ?? "";
+  return {
+    title: p.name,
+    brand: p.brand,
+    description: p.description,
+    category: p.category,
+    color: findSpec(/colou?r/i),
+    size: findSpec(/size/i),
+    images: p.imageUrl ? [p.imageUrl] : [],
+  };
+}
+
 // GET /api/barcode?code=<ean/upc>
-// Tries Barcodelookup.com first, then falls back to UPCitemdb. Returns
+// Tries barcodelookup.com → UPCitemdb → go-upc.com in order. Returns
 // normalised, price-free product fields ready to drop into the add-product form.
 export async function GET(request: Request) {
   const code = new URL(request.url).searchParams.get("code")?.trim() ?? "";
@@ -172,32 +220,44 @@ export async function GET(request: Request) {
   }
 
   try {
-    // Primary: barcodelookup.com
     let item: RawItem | null = null;
     let source = "barcodelookup";
     try {
       item = await lookupBarcodeLookup(code);
-    } catch {
+    } catch (e) {
+      console.error("[barcode] barcodelookup threw", e);
       item = null;
     }
 
-    // Fallback: UPCitemdb
     if (!item) {
       source = "upcitemdb";
       try {
         item = await lookupUpcItemDb(code);
-      } catch {
+      } catch (e) {
+        console.error("[barcode] upcitemdb threw", e);
+        item = null;
+      }
+    }
+
+    if (!item) {
+      source = "go-upc";
+      try {
+        item = await lookupGoUpc(code);
+      } catch (e) {
+        console.error("[barcode] go-upc threw", e);
         item = null;
       }
     }
 
     if (!item || (!item.title && !item.brand)) {
-      // Not found anywhere — let the admin fill it in manually.
+      console.warn("[barcode] not found in any provider", code);
       return NextResponse.json({ found: false, barcode: code });
     }
 
+    console.log("[barcode] found via", source, "→", item.title);
     return NextResponse.json(normalise(code, item, source));
-  } catch {
+  } catch (e) {
+    console.error("[barcode] fatal", e);
     return NextResponse.json(
       { found: false, error: "Сүлжээний алдаа. Дахин оролдоно уу." },
       { status: 502 }
