@@ -433,6 +433,82 @@ function ProductForm({
     }
   };
 
+  // Cloudinary image hosting.
+  const [uploading, setUploading] = useState(false);
+  const [imgMsg, setImgMsg] = useState<{ ok: boolean; text: string } | null>(null);
+
+  const appendImages = (urls: string[]) => {
+    setV((prev) => {
+      const existing = prev.images
+        .split(",")
+        .map((s) => s.trim())
+        .filter(Boolean);
+      const merged = [...existing, ...urls.filter((u) => !existing.includes(u))];
+      return { ...prev, images: merged.join(", ") };
+    });
+  };
+
+  const uploadFiles = async (files: FileList | null) => {
+    if (!files || files.length === 0) return;
+    setUploading(true);
+    setImgMsg(null);
+    try {
+      const fd = new FormData();
+      Array.from(files).forEach((f) => fd.append("files", f));
+      const res = await fetch("/api/upload", { method: "POST", body: fd });
+      const data = (await res.json()) as { urls?: string[]; error?: string };
+      if (!res.ok || !data.urls?.length) {
+        setImgMsg({ ok: false, text: data.error ?? "Хуулж чадсангүй." });
+        return;
+      }
+      appendImages(data.urls);
+      setImgMsg({ ok: true, text: `${data.urls.length} зураг хадгалагдлаа.` });
+    } catch {
+      setImgMsg({ ok: false, text: "Сүлжээний алдаа." });
+    } finally {
+      setUploading(false);
+    }
+  };
+
+  // Re-host any external (non-Cloudinary) URLs — e.g. from a barcode lookup.
+  const rehostImages = async () => {
+    const urls = v.images
+      .split(",")
+      .map((s) => s.trim())
+      .filter((s) => /^https?:\/\//i.test(s) && !s.includes("res.cloudinary.com"));
+    if (urls.length === 0) {
+      setImgMsg({ ok: false, text: "Cloudinary руу хуулах гадны зураг алга." });
+      return;
+    }
+    setUploading(true);
+    setImgMsg(null);
+    try {
+      const res = await fetch("/api/upload", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ urls }),
+      });
+      const data = (await res.json()) as { urls?: string[]; error?: string };
+      if (!res.ok || !data.urls?.length) {
+        setImgMsg({ ok: false, text: data.error ?? "Хуулж чадсангүй." });
+        return;
+      }
+      // Swap the external URLs for their Cloudinary counterparts.
+      setV((prev) => {
+        const kept = prev.images
+          .split(",")
+          .map((s) => s.trim())
+          .filter((s) => s && !urls.includes(s));
+        return { ...prev, images: [...kept, ...data.urls!].join(", ") };
+      });
+      setImgMsg({ ok: true, text: `${data.urls.length} зураг Cloudinary-д хадгалагдлаа.` });
+    } catch {
+      setImgMsg({ ok: false, text: "Сүлжээний алдаа." });
+    } finally {
+      setUploading(false);
+    }
+  };
+
   useEffect(() => {
     if (state?.ok) onDone(state.message);
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -676,6 +752,54 @@ function ProductForm({
           onChange={(e) => set("images", e.target.value)}
           className={field}
         />
+        <div className="mt-2 flex flex-wrap items-center gap-2">
+          <label className="inline-flex cursor-pointer items-center gap-1.5 rounded-lg border border-dashed px-3 py-2 text-xs font-medium text-muted transition hover:border-foreground hover:text-foreground">
+            <input
+              type="file"
+              accept="image/*"
+              multiple
+              className="hidden"
+              disabled={uploading}
+              onChange={(e) => {
+                uploadFiles(e.target.files);
+                e.target.value = "";
+              }}
+            />
+            {uploading ? "Хуулж байна…" : "⬆ Зураг хуулах"}
+          </label>
+          <button
+            type="button"
+            onClick={rehostImages}
+            disabled={uploading}
+            className="rounded-lg border px-3 py-2 text-xs font-medium text-muted transition hover:border-foreground hover:text-foreground disabled:opacity-50"
+          >
+            ☁ Cloudinary руу хуулах
+          </button>
+        </div>
+        {imgMsg && (
+          <p
+            className={`mt-2 text-xs ${imgMsg.ok ? "text-success" : "text-danger"}`}
+          >
+            {imgMsg.text}
+          </p>
+        )}
+        {v.images.trim() && (
+          <div className="mt-2 flex flex-wrap gap-2">
+            {v.images
+              .split(",")
+              .map((s) => s.trim())
+              .filter(Boolean)
+              .slice(0, 8)
+              .map((s, i) => (
+                <ProductImage
+                  key={`${s}-${i}`}
+                  seed={s}
+                  label={v.name || "Бараа"}
+                  className="h-16 w-16 rounded-lg border"
+                />
+              ))}
+          </div>
+        )}
       </label>
 
       <label className="block">

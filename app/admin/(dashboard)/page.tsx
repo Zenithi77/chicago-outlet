@@ -38,10 +38,10 @@ export default function AdminDashboard() {
 
   return (
     <div>
-      <h1 className="font-serif text-2xl font-bold">Хяналтын самбар</h1>
+      <h1 className="font-serif text-xl font-bold sm:text-2xl">Хяналтын самбар</h1>
       <p className="text-sm text-muted">Борлуулалт болон агуулахын тойм</p>
 
-      <div className="mt-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+      <div className="mt-5 grid grid-cols-2 gap-3 sm:mt-6 sm:gap-4 lg:grid-cols-4">
         <Kpi label="Нийт орлого" value={formatMNT(revenue)} sub="Төлөгдсөн" />
         <Kpi label="Захиалга" value={`${orderCount}`} sub={`${pending} хүлээгдэж буй`} />
         <Kpi label="Дундаж захиалга" value={formatMNT(aov)} sub="AOV" />
@@ -134,17 +134,19 @@ export default function AdminDashboard() {
 
 function Kpi({ label, value, sub }: { label: string; value: string; sub: string }) {
   return (
-    <div className="rounded-xl border bg-surface p-5">
-      <p className="text-xs uppercase tracking-wider text-muted">{label}</p>
-      <p className="mt-1 font-serif text-2xl font-bold">{value}</p>
-      <p className="text-xs text-accent-dark">{sub}</p>
+    <div className="rounded-2xl border bg-surface p-4 transition hover:shadow-[0_12px_30px_-18px_rgba(0,0,0,0.25)] sm:p-5">
+      <p className="text-[10px] font-semibold uppercase tracking-wider text-muted sm:text-xs">
+        {label}
+      </p>
+      <p className="mt-1 font-serif text-xl font-bold sm:text-2xl">{value}</p>
+      <p className="mt-0.5 text-xs font-medium text-accent-dark">{sub}</p>
     </div>
   );
 }
 
 function Card({ title, children }: { title: string; children: React.ReactNode }) {
   return (
-    <div className="rounded-xl border bg-surface p-5">
+    <div className="rounded-2xl border bg-surface p-5 transition hover:shadow-[0_12px_30px_-20px_rgba(0,0,0,0.2)]">
       <h2 className="mb-4 font-serif text-lg font-semibold">{title}</h2>
       {children}
     </div>

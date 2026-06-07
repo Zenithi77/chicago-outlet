@@ -79,7 +79,7 @@ export function AdminShell({
         </div>
       </aside>
 
-      <div className="flex-1">
+      <div className="flex min-w-0 flex-1 flex-col">
         {/* Mobile top bar */}
         <div className="sticky top-0 z-30 flex items-center justify-between border-b bg-surface/90 px-4 py-3 backdrop-blur md:hidden">
           <Link href="/admin" className="font-serif text-base font-bold">
@@ -118,7 +118,7 @@ export function AdminShell({
             );
           })}
         </div>
-        <main className="p-4 sm:p-5 md:p-8">{children}</main>
+        <main className="w-full max-w-full overflow-x-hidden p-4 sm:p-5 md:p-8">{children}</main>
       </div>
     </div>
   );

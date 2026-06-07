@@ -1,3 +1,6 @@
+"use client";
+
+import { useState } from "react";
 import { classNames } from "@/lib/utils";
 
 // Deterministic gradient placeholder used in place of real product photos.
@@ -30,6 +33,23 @@ export function ProductImage({
   label?: string;
   className?: string;
 }) {
+  const [broken, setBroken] = useState(false);
+  const isUrl = /^https?:\/\//i.test(seed);
+
+  // Real photo (e.g. fetched from a barcode lookup). Falls back to the
+  // gradient placeholder if the external image fails to load.
+  if (isUrl && !broken) {
+    return (
+      <img
+        src={seed}
+        alt={label ?? "Бараа"}
+        loading="lazy"
+        onError={() => setBroken(true)}
+        className={classNames("object-cover", className)}
+      />
+    );
+  }
+
   const h = hash(seed);
   const [from, to] = PALETTES[h % PALETTES.length];
   const angle = h % 180;
