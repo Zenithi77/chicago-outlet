@@ -17,18 +17,19 @@ update products set
   is_online = (branch = 'online')
 where branch_stock = '{}';
 
+-- 5. Drop branch-dependent policies first, then drop column
+drop policy if exists "staff read all products" on products;
+drop policy if exists "staff manage products" on products;
+
 -- 3. Drop old single branch column
-alter table products drop column if exists branch;
+alter table products drop column if exists branch cascade;
 
 -- 4. GIN index for branch_stock queries
 create index if not exists products_branch_stock_idx on products using gin (branch_stock);
 
--- 5. Update RLS: use is_online and branch_stock keys for access control
---    (service_role bypasses RLS for server-side ops — these govern dashboard UI)
-drop policy if exists "staff read all products" on products;
+-- 6. Recreate policies (no longer reference branch column)
 create policy "staff read all products" on products for select
   using (public.is_staff());
 
-drop policy if exists "staff manage products" on products;
 create policy "staff manage products" on products for all
   using (public.is_staff()) with check (public.is_staff());
