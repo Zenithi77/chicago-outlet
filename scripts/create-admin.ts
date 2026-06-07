@@ -82,7 +82,7 @@ async function main() {
   console.log(`  Email:    ${email}`);
   console.log(`  Password: ${password}`);
   console.log("  Role:     admin");
-  console.log("Sign in at /admin/login");
+  console.log("Sign in at /account");
 }
 
 main().catch((err) => {

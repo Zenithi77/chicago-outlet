@@ -34,11 +34,11 @@ export async function updateSession(request: NextRequest) {
   } = await supabase.auth.getUser();
 
   const path = request.nextUrl.pathname;
-  const isAdminArea = path.startsWith("/admin") && !path.startsWith("/admin/login");
+  const isAdminArea = path.startsWith("/admin");
 
   if (isAdminArea && !user) {
     const url = request.nextUrl.clone();
-    url.pathname = "/admin/login";
+    url.pathname = "/account";
     url.searchParams.set("next", path);
     return NextResponse.redirect(url);
   }

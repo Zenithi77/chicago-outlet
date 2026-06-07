@@ -10,8 +10,9 @@ export default async function DashboardLayout({
   const profile = await getProfile();
 
   // Authoritative guard. The proxy only does an optimistic logged-in check.
-  if (!profile) redirect("/admin/login");
-  if (!isStaff(profile.role)) redirect("/admin/login?error=forbidden");
+  // Auth happens on the shared /account page; non-staff are sent there.
+  if (!profile) redirect("/account?next=/admin");
+  if (!isStaff(profile.role)) redirect("/account");
 
   return (
     <AdminShell role={profile.role} name={profile.full_name || profile.email || "Admin"}>

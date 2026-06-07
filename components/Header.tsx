@@ -313,13 +313,6 @@ export function Header() {
           >
             <UserIcon /> Миний бүртгэл
           </Link>
-          <Link
-            href="/admin"
-            onClick={() => setMenuOpen(false)}
-            className="flex items-center gap-2 py-2 text-sm text-muted"
-          >
-            Админ нэвтрэх
-          </Link>
         </div>
       </aside>
     </header>

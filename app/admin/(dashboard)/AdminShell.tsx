@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { classNames } from "@/lib/utils";
-import { logout } from "@/app/admin/login/actions";
+import { logout } from "./actions";
 import type { Role } from "@/lib/supabase/auth";
 
 const NAV = [
