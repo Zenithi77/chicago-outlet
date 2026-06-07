@@ -5,6 +5,41 @@ import { useRouter } from "next/navigation";
 import { ProductImage } from "@/components/ProductImage";
 import { finalPrice, formatMNT, classNames } from "@/lib/utils";
 import { CameraIcon, UploadIcon, CloudIcon, CloseIcon } from "@/components/Icons";
+
+// ── Excel import state lives here so it sits above the form ──────────────────
+function useExcelImport(onSuccess: (msg: string) => void) {
+  const router = useRouter();
+  const [importing, setImporting] = useState(false);
+  const [importMsg, setImportMsg] = useState<{ ok: boolean; text: string } | null>(null);
+
+  const runImport = async (file: File) => {
+    setImporting(true);
+    setImportMsg(null);
+    try {
+      const fd = new FormData();
+      fd.append("file", file);
+      const res = await fetch("/api/import", { method: "POST", body: fd });
+      const data = await res.json();
+      if (data.inserted > 0) {
+        setImportMsg({ ok: true, text: data.message });
+        onSuccess(data.message);
+        router.refresh();
+      } else {
+        const errLines = (data.errors ?? [])
+          .slice(0, 5)
+          .map((e: { row: number; error: string }) => `Мөр ${e.row}: ${e.error}`)
+          .join(" | ");
+        setImportMsg({ ok: false, text: data.message + (errLines ? " — " + errLines : "") });
+      }
+    } catch {
+      setImportMsg({ ok: false, text: "Сүлжээний алдаа." });
+    } finally {
+      setImporting(false);
+    }
+  };
+
+  return { importing, importMsg, runImport };
+}
 import {
   createProduct,
   updateProductFields,
@@ -84,6 +119,8 @@ export function ProductsClient({
       }
     });
 
+  const { importing, importMsg, runImport } = useExcelImport((msg) => notify(msg));
+
   return (
     <div>
       <div className="flex flex-wrap items-center justify-between gap-3">
@@ -93,13 +130,53 @@ export function ProductsClient({
             {filtered.length} бараа{isPending && " · хадгалж байна…"}
           </p>
         </div>
-        <button
-          onClick={() => setShowForm((v) => !v)}
-          className="rounded-md bg-foreground px-5 py-2.5 text-sm font-semibold text-white hover:bg-accent hover:text-foreground"
-        >
-          {showForm ? "Хаах" : "+ Шинэ бараа"}
-        </button>
+        <div className="flex flex-wrap items-center gap-2">
+          {/* Excel template download */}
+          <a
+            href="/api/import/template"
+            download
+            className="inline-flex items-center gap-1.5 rounded-md border px-4 py-2 text-sm font-medium text-muted hover:border-foreground hover:text-foreground"
+          >
+            <UploadIcon className="h-4 w-4 rotate-180" />
+            Загвар татах
+          </a>
+          {/* Excel file import */}
+          <label className={classNames(
+            "inline-flex cursor-pointer items-center gap-1.5 rounded-md border px-4 py-2 text-sm font-medium transition",
+            importing
+              ? "cursor-not-allowed border-border text-muted opacity-60"
+              : "hover:border-foreground hover:text-foreground"
+          )}>
+            <input
+              type="file"
+              accept=".xlsx,.xls,.csv"
+              className="hidden"
+              disabled={importing}
+              onChange={(e) => {
+                const f = e.target.files?.[0];
+                if (f) { runImport(f); e.target.value = ""; }
+              }}
+            />
+            <UploadIcon className="h-4 w-4" />
+            {importing ? "Оруулж байна…" : "Excel оруулах"}
+          </label>
+          <button
+            onClick={() => setShowForm((v) => !v)}
+            className="rounded-md bg-foreground px-5 py-2.5 text-sm font-semibold text-white hover:bg-accent hover:text-foreground"
+          >
+            {showForm ? "Хаах" : "+ Шинэ бараа"}
+          </button>
+        </div>
       </div>
+
+      {importMsg && (
+        <p className={classNames(
+          "mt-3 rounded-lg px-4 py-2.5 text-sm",
+          importMsg.ok ? "bg-success/10 text-success" : "bg-danger/10 text-danger"
+        )}>
+          {importMsg.text}
+        </p>
+      )}
 
       {loadError && (
         <p className="mt-4 rounded-md bg-danger/10 px-4 py-3 text-sm text-danger">
