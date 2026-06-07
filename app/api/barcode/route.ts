@@ -111,7 +111,9 @@ async function lookupBarcodeLookup(code: string): Promise<RawItem | null> {
   const key = process.env.BARCODELOOKUP_KEY;
   if (!key) return null; // skip silently if no key configured
   const url = `https://api.barcodelookup.com/v3/products?barcode=${code}&formatted=y&key=${key}`;
-  const res = await fetch(url, { next: { revalidate: 86400 } });
+  const ctrl = new AbortController();
+  const t = setTimeout(() => ctrl.abort(), 3500);
+  const res = await fetch(url, { next: { revalidate: 86400 }, signal: ctrl.signal }).finally(() => clearTimeout(t));
   if (!res.ok) return null;
   const data: {
     products?: {
@@ -144,10 +146,13 @@ async function lookupUpcItemDb(code: string): Promise<RawItem | null> {
   const endpoint = key
     ? `https://api.upcitemdb.com/prod/v1/lookup?upc=${code}`
     : `https://api.upcitemdb.com/prod/trial/lookup?upc=${code}`;
+  const ctrl = new AbortController();
+  const t = setTimeout(() => ctrl.abort(), 4500);
   const res = await fetch(endpoint, {
     headers: key ? { user_key: key, key_type: "3scale" } : {},
     next: { revalidate: 86400 },
-  });
+    signal: ctrl.signal,
+  }).finally(() => clearTimeout(t));
   if (!res.ok) return null;
   const data: { items?: RawItem[] } = await res.json();
   return data.items?.[0] ?? null;

@@ -4,7 +4,7 @@ import { useEffect, useMemo, useState, useTransition, useActionState } from "rea
 import { useRouter } from "next/navigation";
 import { ProductImage } from "@/components/ProductImage";
 import { finalPrice, formatMNT, classNames } from "@/lib/utils";
-import { CameraIcon, UploadIcon, CloudIcon } from "@/components/Icons";
+import { CameraIcon, UploadIcon, CloudIcon, CloseIcon } from "@/components/Icons";
 import {
   createProduct,
   updateProductFields,
@@ -635,8 +635,8 @@ function ProductForm({
         )}
       </div>
 
-      {/* Нэр, SKU, Брэнд */}
-      <label className="block">
+      {/* 1. Нэр */}
+      <label className="block sm:col-span-2 lg:col-span-3">
         <span className={lbl}>Барааны нэр *</span>
         <input
           name="name"
@@ -646,6 +646,113 @@ function ProductForm({
           className={field}
         />
       </label>
+
+      {/* 2. Зураг — томхон preview, тус бүрд устгах товч */}
+      <div className="sm:col-span-2 lg:col-span-3">
+        <span className={lbl}>Зурагнууд</span>
+        <input type="hidden" name="images" value={v.images} />
+        {(() => {
+          const list = v.images
+            .split(",")
+            .map((s) => s.trim())
+            .filter(Boolean);
+          const removeAt = (idx: number) => {
+            const next = list.filter((_, i) => i !== idx).join(", ");
+            set("images", next);
+          };
+          return (
+            <>
+              <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4">
+                {list.map((s, i) => (
+                  <div
+                    key={`${s}-${i}`}
+                    className="group relative aspect-square overflow-hidden rounded-xl border bg-background"
+                  >
+                    <ProductImage
+                      seed={s}
+                      label={v.name || "Бараа"}
+                      className="h-full w-full object-cover"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => removeAt(i)}
+                      className="absolute right-1.5 top-1.5 inline-flex h-7 w-7 items-center justify-center rounded-full bg-foreground/85 text-white opacity-0 transition group-hover:opacity-100"
+                      aria-label="Зураг устгах"
+                    >
+                      <CloseIcon className="h-3.5 w-3.5" />
+                    </button>
+                  </div>
+                ))}
+                <label className="flex aspect-square cursor-pointer flex-col items-center justify-center gap-1.5 rounded-xl border-2 border-dashed border-border bg-background text-xs font-medium text-muted transition hover:border-foreground hover:text-foreground">
+                  <input
+                    type="file"
+                    accept="image/*"
+                    multiple
+                    className="hidden"
+                    disabled={uploading}
+                    onChange={(e) => {
+                      uploadFiles(e.target.files);
+                      e.target.value = "";
+                    }}
+                  />
+                  <UploadIcon className="h-6 w-6" />
+                  <span className="text-center leading-tight">
+                    {uploading ? "Хуулж байна…" : "Зураг нэмэх"}
+                  </span>
+                </label>
+              </div>
+
+              <div className="mt-3 flex flex-wrap items-center gap-2">
+                <input
+                  type="url"
+                  placeholder="Зургийн URL эсвэл seed нэр…"
+                  value={v.images}
+                  onChange={(e) => set("images", e.target.value)}
+                  className={field + " min-w-[200px] flex-1"}
+                />
+                <button
+                  type="button"
+                  onClick={rehostImages}
+                  disabled={uploading}
+                  className="inline-flex items-center gap-1.5 rounded-lg border px-3 py-2 text-xs font-medium text-muted transition hover:border-foreground hover:text-foreground disabled:opacity-50"
+                >
+                  <CloudIcon className="h-4 w-4" /> Cloudinary руу хуулах
+                </button>
+              </div>
+              {imgMsg && (
+                <p
+                  className={`mt-2 text-xs ${imgMsg.ok ? "text-success" : "text-danger"}`}
+                >
+                  {imgMsg.text}
+                </p>
+              )}
+            </>
+          );
+        })()}
+      </div>
+
+      {/* 3. Богино тайлбар, Дэлгэрэнгүй тайлбар */}
+      <label className="block sm:col-span-2 lg:col-span-3">
+        <span className={lbl}>Богино тайлбар</span>
+        <input
+          name="short_description"
+          value={v.short_description}
+          onChange={(e) => set("short_description", e.target.value)}
+          className={field}
+        />
+      </label>
+      <label className="block sm:col-span-2 lg:col-span-3">
+        <span className={lbl}>Дэлгэрэнгүй тайлбар</span>
+        <textarea
+          name="description"
+          rows={3}
+          value={v.description}
+          onChange={(e) => set("description", e.target.value)}
+          className={field}
+        />
+      </label>
+
+      {/* 4. SKU, Брэнд, Ангилал */}
       <label className="block">
         <span className={lbl}>SKU (хоосон бол автоматаар)</span>
         <input
@@ -666,8 +773,6 @@ function ProductForm({
           className={field}
         />
       </label>
-
-      {/* Ангилал, Дэд ангилал, Хүйс */}
       <label className="block">
         <span className={lbl}>Ангилал</span>
         <select
@@ -683,6 +788,7 @@ function ProductForm({
           ))}
         </select>
       </label>
+
       <label className="block">
         <span className={lbl}>Дэд ангилал</span>
         <input
@@ -709,8 +815,6 @@ function ProductForm({
           </select>
         </label>
       )}
-
-      {/* Загвар, Үнэ, Хямдрал */}
       {isApparel && (
         <label className="block">
           <span className={lbl}>Загвар (fit)</span>
@@ -727,6 +831,8 @@ function ProductForm({
           </select>
         </label>
       )}
+
+      {/* 5. Үнэ, Хямдрал */}
       <label className="block">
         <span className={lbl}>Үнэ (₮) *</span>
         <input
@@ -752,7 +858,7 @@ function ProductForm({
         />
       </label>
 
-      {/* Нийт нөөц, Хэмжээнүүд */}
+      {/* 6. Нөөц, Хэмжээ */}
       <label className="block">
         <span className={lbl}>Нийт нөөц (хоосон бол өнгөнүүдөөс)</span>
         <input
@@ -776,89 +882,6 @@ function ProductForm({
           />
         </label>
       )}
-
-      {/* Зурагнууд */}
-      <div className="sm:col-span-2 lg:col-span-3">
-        <span className={lbl}>Зурагнууд</span>
-        <input
-          name="images"
-          placeholder="oxford-1, oxford-2 эсвэл URL"
-          value={v.images}
-          onChange={(e) => set("images", e.target.value)}
-          className={field}
-        />
-        <div className="mt-2 flex flex-wrap items-center gap-2">
-          <label className="inline-flex cursor-pointer items-center gap-1.5 rounded-lg border border-dashed px-3 py-2 text-xs font-medium text-muted transition hover:border-foreground hover:text-foreground">
-            <input
-              type="file"
-              accept="image/*"
-              multiple
-              className="hidden"
-              disabled={uploading}
-              onChange={(e) => {
-                uploadFiles(e.target.files);
-                e.target.value = "";
-              }}
-            />
-            <UploadIcon className="h-4 w-4" />
-            {uploading ? "Хуулж байна…" : "Зураг хуулах"}
-          </label>
-          <button
-            type="button"
-            onClick={rehostImages}
-            disabled={uploading}
-            className="inline-flex items-center gap-1.5 rounded-lg border px-3 py-2 text-xs font-medium text-muted transition hover:border-foreground hover:text-foreground disabled:opacity-50"
-          >
-            <CloudIcon className="h-4 w-4" /> Cloudinary руу хуулах
-          </button>
-        </div>
-        {imgMsg && (
-          <p
-            className={`mt-2 text-xs ${imgMsg.ok ? "text-success" : "text-danger"}`}
-          >
-            {imgMsg.text}
-          </p>
-        )}
-        {v.images.trim() && (
-          <div className="mt-3 grid grid-cols-4 gap-2 sm:grid-cols-6 lg:grid-cols-8">
-            {v.images
-              .split(",")
-              .map((s) => s.trim())
-              .filter(Boolean)
-              .slice(0, 8)
-              .map((s, i) => (
-                <div key={`${s}-${i}`} className="relative aspect-square">
-                  <ProductImage
-                    seed={s}
-                    label={v.name || "Бараа"}
-                    className="h-full w-full rounded-lg border object-cover"
-                  />
-                </div>
-              ))}
-          </div>
-        )}
-      </div>
-
-      {/* Богино тайлбар, Дэлгэрэнгүй тайлбар */}
-      <label className="block sm:col-span-2 lg:col-span-3">
-        <span className={lbl}>Богино тайлбар</span>
-        <input
-          name="short_description"
-          value={v.short_description}
-          onChange={(e) => set("short_description", e.target.value)}
-          className={field}
-        />
-      </label>
-      <label className="block sm:col-span-2 lg:col-span-3">
-        <span className={lbl}>Дэлгэрэнгүй тайлбар</span>
-        <textarea
-          name="description"
-          rows={3}
-          value={v.description}
-          onChange={(e) => set("description", e.target.value)}
-          className={field}
-        />
-      </label>
 
       {/* Таг, Материал, Цуглуулга, Улирал */}
       <label className="block">
