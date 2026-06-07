@@ -88,7 +88,7 @@ export function HeroVideo() {
             ref={(el) => {
               videoRefs.current[i] = el;
             }}
-            className="absolute inset-0 h-full w-full object-cover object-center brightness-[0.85] sm:brightness-100"
+            className="absolute inset-0 h-full w-full object-cover object-center brightness-100"
             style={{
               animation:
                 isDesktop && i === active ? "kenBurns 9s ease-out both" : "none",
@@ -103,9 +103,9 @@ export function HeroVideo() {
         </div>
       ))}
 
-      {/* Cinematic readability gradients + vignette (stronger bottom fade on mobile) */}
-      <div className="pointer-events-none absolute inset-0 bg-gradient-to-r from-black/85 via-black/55 to-black/20 sm:from-black/80 sm:via-black/45 sm:to-black/10" />
-      <div className="pointer-events-none absolute inset-0 bg-gradient-to-t from-black/85 via-black/20 to-black/35 sm:from-black/70 sm:via-transparent sm:to-black/30" />
+      {/* Cinematic readability gradients + vignette (lighter on mobile so the video stays clear) */}
+      <div className="pointer-events-none absolute inset-0 bg-gradient-to-r from-black/45 via-black/15 to-transparent sm:from-black/80 sm:via-black/45 sm:to-black/10" />
+      <div className="pointer-events-none absolute inset-0 bg-gradient-to-t from-black/45 via-transparent to-black/15 sm:from-black/70 sm:via-transparent sm:to-black/30" />
 
       {/* Film grain */}
       <div
@@ -122,16 +122,16 @@ export function HeroVideo() {
       <div className="pointer-events-none absolute inset-x-0 bottom-0 hidden bg-black/85 sm:block sm:h-9 md:h-11" />
 
       {/* Content */}
-      <div className="container-page relative flex h-full flex-col justify-center text-white">
+      <div className="container-page relative flex h-full flex-col justify-end pb-16 text-white sm:justify-center sm:pb-0">
         <div key={active} className="max-w-2xl">
           <p
-            className="mb-1.5 text-[9px] font-semibold uppercase tracking-[0.25em] text-accent sm:mb-4 sm:text-xs sm:tracking-[0.36em]"
+            className="mb-1.5 text-[9px] font-semibold uppercase tracking-[0.25em] text-accent/70 sm:mb-4 sm:text-xs sm:tracking-[0.36em] sm:text-accent"
             style={{ animation: "heroReveal 0.8s ease both" }}
           >
             {scene.kicker}
           </p>
           <h1
-            className="font-serif text-2xl font-bold leading-[1.05] sm:text-5xl md:text-7xl"
+            className="font-serif text-xl font-bold leading-[1.1] text-white/70 sm:text-5xl sm:text-white md:text-7xl"
             style={{ animation: "heroReveal 0.9s ease 0.1s both" }}
           >
             {scene.title}
