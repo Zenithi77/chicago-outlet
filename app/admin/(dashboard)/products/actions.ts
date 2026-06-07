@@ -52,6 +52,26 @@ function parseColors(value: FormDataEntryValue | null): {
     });
 }
 
+// Build branch_stock jsonb from form data.
+// Checkboxes: has_park_od, has_riveria, is_online
+// Stock inputs: stock_park_od, stock_riveria
+function parseBranchStock(formData: FormData): {
+  branch_stock: Record<string, number>;
+  is_online: boolean;
+  total_stock: number;
+} {
+  const branch_stock: Record<string, number> = {};
+  if (formData.get("has_park_od") === "on") {
+    branch_stock.park_od = Math.max(0, Number(formData.get("stock_park_od")) || 0);
+  }
+  if (formData.get("has_riveria") === "on") {
+    branch_stock.riveria = Math.max(0, Number(formData.get("stock_riveria")) || 0);
+  }
+  const is_online = formData.get("is_online") === "on";
+  const total_stock = Object.values(branch_stock).reduce((s, n) => s + n, 0);
+  return { branch_stock, is_online, total_stock };
+}
+
 export async function createProduct(
   _prev: ProductActionState,
   formData: FormData
@@ -71,12 +91,7 @@ export async function createProduct(
   const supabase = await createClient();
 
   const colors = parseColors(formData.get("colors"));
-  const colorStock = colors.reduce((sum, c) => sum + c.stock, 0);
-  const totalStockInput = Number(formData.get("total_stock"));
-  const totalStock =
-    Number.isFinite(totalStockInput) && totalStockInput > 0
-      ? totalStockInput
-      : colorStock;
+  const { branch_stock, is_online, total_stock } = parseBranchStock(formData);
 
   let slug = String(formData.get("slug") ?? "").trim() || slugify(name);
 
@@ -123,8 +138,9 @@ export async function createProduct(
     fit: String(formData.get("fit") ?? "regular"),
     season: String(formData.get("season") ?? "all-season").trim() || "all-season",
     collection: String(formData.get("collection") ?? "").trim(),
-    total_stock: totalStock,
-    branch: String(formData.get("branch") ?? "online") as "park_od" | "riveria" | "online",
+    branch_stock,
+    is_online,
+    total_stock,
   };
 
   const { error } = await supabase.from("products").insert(row);
@@ -134,6 +150,64 @@ export async function createProduct(
 
   revalidatePath("/admin/products");
   return { ok: true, message: `${sku} нэмэгдлээ` };
+}
+
+export async function updateProduct(
+  _prev: ProductActionState,
+  formData: FormData
+): Promise<ProductActionState> {
+  try {
+    await requireStaff();
+  } catch {
+    return { ok: false, error: "Эрх хүрэлцэхгүй байна." };
+  }
+
+  const id = String(formData.get("_product_id") ?? "").trim();
+  if (!id) return { ok: false, error: "Бараа ID олдсонгүй." };
+
+  const name = String(formData.get("name") ?? "").trim();
+  const price = Number(formData.get("price"));
+  if (!name || !Number.isFinite(price) || price <= 0) {
+    return { ok: false, error: "Нэр болон зөв үнэ оруулна уу." };
+  }
+
+  const supabase = await createClient();
+  const colors = parseColors(formData.get("colors"));
+  const { branch_stock, is_online, total_stock } = parseBranchStock(formData);
+
+  const patch = {
+    name,
+    brand: String(formData.get("brand") ?? "Chicago Outlet").trim() || "Chicago Outlet",
+    category: String(formData.get("category") ?? "").trim(),
+    subcategory: String(formData.get("subcategory") ?? "").trim(),
+    gender: String(formData.get("gender") ?? "unisex"),
+    description: String(formData.get("description") ?? "").trim(),
+    short_description: String(formData.get("short_description") ?? "").trim(),
+    price,
+    discount_percent: Number(formData.get("discount_percent")) || 0,
+    images: csv(formData.get("images")),
+    sizes: csv(formData.get("sizes")),
+    colors,
+    tags: csv(formData.get("tags")),
+    is_featured: formData.get("is_featured") === "on",
+    is_new_arrival: formData.get("is_new_arrival") === "on",
+    is_on_sale: (Number(formData.get("discount_percent")) || 0) > 0,
+    is_active: formData.get("is_active") !== "off",
+    care_instructions: String(formData.get("care_instructions") ?? "").trim(),
+    material: String(formData.get("material") ?? "").trim(),
+    fit: String(formData.get("fit") ?? "regular"),
+    season: String(formData.get("season") ?? "all-season").trim() || "all-season",
+    collection: String(formData.get("collection") ?? "").trim(),
+    branch_stock,
+    is_online,
+    total_stock,
+  };
+
+  const { error } = await supabase.from("products").update(patch).eq("id", id);
+  if (error) return { ok: false, error: error.message };
+
+  revalidatePath("/admin/products");
+  return { ok: true, message: `${name} шинэчлэгдлээ` };
 }
 
 export async function updateProductFields(

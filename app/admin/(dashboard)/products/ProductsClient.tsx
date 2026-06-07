@@ -42,6 +42,7 @@ function useExcelImport(onSuccess: (msg: string) => void) {
 }
 import {
   createProduct,
+  updateProduct,
   updateProductFields,
   toggleProductActive,
   type ProductActionState,
@@ -52,15 +53,30 @@ export type ProductRow = {
   id: string;
   sku: string;
   name: string;
+  slug: string;
+  brand: string;
   category: string;
+  subcategory: string;
   gender: string;
-  branch: "park_od" | "riveria" | "online";
+  branchStock: Record<string, number>;
+  isOnline: boolean;
   price: number;
   discountPercent: number;
   totalStock: number;
   isActive: boolean;
+  isFeatured: boolean;
+  isNewArrival: boolean;
   images: string[];
   collection: string;
+  material: string;
+  fit: string;
+  season: string;
+  tags: string[];
+  sizes: string[];
+  colors: Array<{ name: string; hex: string; stock: number }>;
+  shortDescription: string;
+  description: string;
+  careInstructions: string;
 };
 
 type Cat = { name: string; nameMn: string };
@@ -79,6 +95,7 @@ export function ProductsClient({
   const [branchFilter, setBranchFilter] = useState<"" | "park_od" | "riveria" | "online">("");
   const [catFilter, setCatFilter] = useState("");
   const [stockFilter, setStockFilter] = useState("");
+  const [editingProduct, setEditingProduct] = useState<ProductRow | null>(null);
   const [showForm, setShowForm] = useState(false);
   const [toast, setToast] = useState("");
   const [isPending, startTransition] = useTransition();
@@ -97,7 +114,9 @@ export function ProductsClient({
           !r.sku.toLowerCase().includes(search.toLowerCase())
         )
           return false;
-        if (branchFilter && r.branch !== branchFilter) return false;
+        if (branchFilter === "online" && !r.isOnline) return false;
+        if (branchFilter === "park_od" && !r.branchStock["park_od"]) return false;
+        if (branchFilter === "riveria" && !r.branchStock["riveria"]) return false;
         if (catFilter && r.category !== catFilter) return false;
         if (stockFilter === "out" && r.totalStock > 0) return false;
         if (stockFilter === "low" && (r.totalStock === 0 || r.totalStock > 5))
@@ -164,10 +183,10 @@ export function ProductsClient({
             {importing ? "Оруулж байна…" : "Excel оруулах"}
           </label>
           <button
-            onClick={() => setShowForm((v) => !v)}
+            onClick={() => { setShowForm((v) => !v); setEditingProduct(null); }}
             className="rounded-md bg-foreground px-5 py-2.5 text-sm font-semibold text-white hover:bg-accent hover:text-foreground"
           >
-            {showForm ? "Хаах" : "+ Шинэ бараа"}
+            {showForm && !editingProduct ? "Хаах" : "+ Шинэ бараа"}
           </button>
         </div>
       </div>
@@ -188,11 +207,13 @@ export function ProductsClient({
         </p>
       )}
 
-      {showForm && (
+      {(showForm || editingProduct) && (
         <ProductForm
           categories={categories}
+          editProduct={editingProduct ?? undefined}
           onDone={(msg) => {
             setShowForm(false);
+            setEditingProduct(null);
             notify(msg);
             router.refresh();
           }}
@@ -270,24 +291,35 @@ export function ProductsClient({
                 <p className="truncate font-medium">{r.name}</p>
                 <p className="font-mono text-xs text-muted">{r.sku}</p>
                 <p className="text-xs text-muted">{r.category}</p>
-                <span className={classNames(
-                  "mt-1 inline-block rounded px-1.5 py-0.5 text-[10px] font-semibold",
-                  r.branch === "park_od" ? "bg-blue-100 text-blue-700" :
-                  r.branch === "riveria" ? "bg-purple-100 text-purple-700" :
-                  "bg-amber-100 text-amber-700"
-                )}>
-                  {r.branch === "park_od" ? "Park-Od" : r.branch === "riveria" ? "Riveria" : "Захиалга"}
-                </span>
+                <div className="mt-1 flex flex-wrap gap-1">
+                  {r.branchStock["park_od"] !== undefined && (
+                    <span className="rounded bg-blue-100 px-1.5 py-0.5 text-[10px] font-semibold text-blue-700">Park-Od: {r.branchStock["park_od"]}</span>
+                  )}
+                  {r.branchStock["riveria"] !== undefined && (
+                    <span className="rounded bg-purple-100 px-1.5 py-0.5 text-[10px] font-semibold text-purple-700">Riveria: {r.branchStock["riveria"]}</span>
+                  )}
+                  {r.isOnline && (
+                    <span className="rounded bg-amber-100 px-1.5 py-0.5 text-[10px] font-semibold text-amber-700">Захиалга</span>
+                  )}
+                </div>
               </div>
-              <button
-                onClick={() => persist(() => toggleProductActive(r.id, !r.isActive))}
-                className={classNames(
-                  "shrink-0 rounded-full px-2.5 py-1 text-xs font-semibold",
-                  r.isActive ? "bg-success/15 text-success" : "bg-border text-muted"
-                )}
-              >
-                {r.isActive ? "Идэвхтэй" : "Идэвхгүй"}
-              </button>
+              <div className="flex shrink-0 flex-col items-end gap-1.5">
+                <button
+                  onClick={() => { setEditingProduct(r); setShowForm(false); window.scrollTo({top:0, behavior:'smooth'}); }}
+                  className="rounded px-2.5 py-1 text-xs font-medium border hover:border-foreground"
+                >
+                  Засах
+                </button>
+                <button
+                  onClick={() => persist(() => toggleProductActive(r.id, !r.isActive))}
+                  className={classNames(
+                    "rounded-full px-2.5 py-1 text-xs font-semibold",
+                    r.isActive ? "bg-success/15 text-success" : "bg-border text-muted"
+                  )}
+                >
+                  {r.isActive ? "Идэвхтэй" : "Идэвхгүй"}
+                </button>
+              </div>
             </div>
             <div className="mt-3 grid grid-cols-2 gap-3">
               <label className="block">
@@ -348,11 +380,11 @@ export function ProductsClient({
             <tr>
               <th className="px-4 py-3">Бараа</th>
               <th className="px-4 py-3">SKU</th>
-              <th className="px-4 py-3">Салбар</th>
+              <th className="px-4 py-3">Салбар / Нөөц</th>
               <th className="px-4 py-3">Ангилал</th>
               <th className="px-4 py-3">Үнэ</th>
-              <th className="px-4 py-3">Нөөц</th>
               <th className="px-4 py-3">Төлөв</th>
+              <th className="px-4 py-3"></th>
             </tr>
           </thead>
           <tbody className="divide-y">
@@ -374,14 +406,23 @@ export function ProductsClient({
                   {r.sku}
                 </td>
                 <td className="px-4 py-3">
-                  <span className={classNames(
-                    "rounded px-2 py-0.5 text-xs font-semibold",
-                    r.branch === "park_od" ? "bg-blue-100 text-blue-700" :
-                    r.branch === "riveria" ? "bg-purple-100 text-purple-700" :
-                    "bg-amber-100 text-amber-700"
-                  )}>
-                    {r.branch === "park_od" ? "Park-Od" : r.branch === "riveria" ? "Riveria" : "Захиалга"}
-                  </span>
+                  <div className="flex flex-wrap gap-1">
+                    {r.branchStock["park_od"] !== undefined && (
+                      <span className="rounded bg-blue-100 px-2 py-0.5 text-xs font-semibold text-blue-700">
+                        Park-Od: {r.branchStock["park_od"]}
+                      </span>
+                    )}
+                    {r.branchStock["riveria"] !== undefined && (
+                      <span className="rounded bg-purple-100 px-2 py-0.5 text-xs font-semibold text-purple-700">
+                        Riveria: {r.branchStock["riveria"]}
+                      </span>
+                    )}
+                    {r.isOnline && (
+                      <span className="rounded bg-amber-100 px-2 py-0.5 text-xs font-semibold text-amber-700">
+                        Захиалга
+                      </span>
+                    )}
+                  </div>
                 </td>
                 <td className="px-4 py-3">{r.category}</td>
                 <td className="px-4 py-3">
@@ -402,24 +443,6 @@ export function ProductsClient({
                   )}
                 </td>
                 <td className="px-4 py-3">
-                  <input
-                    type="number"
-                    defaultValue={r.totalStock}
-                    onBlur={(e) => {
-                      const v = Math.max(0, Number(e.target.value));
-                      if (v !== r.totalStock)
-                        persist(() =>
-                          updateProductFields(r.id, { total_stock: v })
-                        );
-                    }}
-                    className={classNames(
-                      "w-16 rounded border bg-background px-2 py-1 text-sm",
-                      r.totalStock === 0 && "text-danger",
-                      r.totalStock > 0 && r.totalStock <= 5 && "text-accent-dark"
-                    )}
-                  />
-                </td>
-                <td className="px-4 py-3">
                   <button
                     onClick={() =>
                       persist(() => toggleProductActive(r.id, !r.isActive))
@@ -432,6 +455,18 @@ export function ProductsClient({
                     )}
                   >
                     {r.isActive ? "Идэвхтэй" : "Идэвхгүй"}
+                  </button>
+                </td>
+                <td className="px-4 py-3">
+                  <button
+                    onClick={() => {
+                      setEditingProduct(r);
+                      setShowForm(false);
+                      window.scrollTo({ top: 0, behavior: "smooth" });
+                    }}
+                    className="rounded border px-3 py-1 text-xs font-medium hover:border-foreground hover:text-foreground"
+                  >
+                    Засах
                   </button>
                 </td>
               </tr>
@@ -461,40 +496,48 @@ export function ProductsClient({
 
 function ProductForm({
   categories,
+  editProduct,
   onDone,
 }: {
   categories: Cat[];
+  editProduct?: ProductRow;
   onDone: (msg: string) => void;
 }) {
-  const [state, action, pending] = useActionState<ProductActionState, FormData>(
-    createProduct,
+  const isEdit = !!editProduct;
+  const action = isEdit ? updateProduct : createProduct;
+
+  const [state, formAction, pending] = useActionState<ProductActionState, FormData>(
+    action,
     undefined
   );
 
   const [v, setV] = useState({
-    name: "",
-    sku: "",
-    brand: "",
-    category: categories[0]?.name ?? "",
-    subcategory: "",
-    gender: "unisex",
-    branch: "online",
-    fit: "regular",
-    price: "",
-    discount_percent: "0",
-    total_stock: "",
-    sizes: "",
-    images: "",
-    tags: "",
-    material: "",
-    collection: "",
-    season: "",
-    colors: "",
-    short_description: "",
-    description: "",
-    care_instructions: "",
+    name: editProduct?.name ?? "",
+    sku: editProduct?.sku ?? "",
+    brand: editProduct?.brand ?? "",
+    category: editProduct?.category ?? categories[0]?.name ?? "",
+    subcategory: editProduct?.subcategory ?? "",
+    gender: editProduct?.gender ?? "unisex",
+    has_park_od: !!(editProduct?.branchStock?.["park_od"] !== undefined),
+    stock_park_od: String(editProduct?.branchStock?.["park_od"] ?? ""),
+    has_riveria: !!(editProduct?.branchStock?.["riveria"] !== undefined),
+    stock_riveria: String(editProduct?.branchStock?.["riveria"] ?? ""),
+    is_online: editProduct?.isOnline ?? true,
+    fit: editProduct?.fit ?? "regular",
+    price: editProduct ? String(editProduct.price) : "",
+    discount_percent: String(editProduct?.discountPercent ?? "0"),
+    sizes: editProduct?.sizes?.join(", ") ?? "",
+    images: editProduct?.images?.join(", ") ?? "",
+    tags: editProduct?.tags?.join(", ") ?? "",
+    material: editProduct?.material ?? "",
+    collection: editProduct?.collection ?? "",
+    season: editProduct?.season ?? "",
+    colors: editProduct?.colors?.map(c => `${c.name}|${c.hex}|${c.stock}`).join("\n") ?? "",
+    short_description: editProduct?.shortDescription ?? "",
+    description: editProduct?.description ?? "",
+    care_instructions: editProduct?.careInstructions ?? "",
   });
-  const set = (k: keyof typeof v, val: string) =>
+  const set = (k: keyof typeof v, val: string | boolean) =>
     setV((p) => ({ ...p, [k]: val }));
 
   const [kind, setKind] = useState<"apparel" | "food" | "home" | "other">(
@@ -680,9 +723,18 @@ function ProductForm({
 
   return (
     <form
-      action={action}
+      action={formAction}
       className="mt-5 grid gap-4 rounded-xl border bg-surface p-5 sm:grid-cols-2 lg:grid-cols-3"
     >
+      {/* Edit mode: hidden product ID */}
+      {isEdit && <input type="hidden" name="_product_id" value={editProduct!.id} />}
+
+      <div className="flex items-center justify-between sm:col-span-2 lg:col-span-3">
+        <h2 className="font-serif text-lg font-bold">
+          {isEdit ? `Засах: ${editProduct!.name}` : "Шинэ бараа нэмэх"}
+        </h2>
+      </div>
+
       {/* Штрих кодоор хайх */}
       <div className="sm:col-span-2 lg:col-span-3">
         <div className="rounded-xl border border-accent/30 bg-accent/5 p-4">
@@ -948,20 +1000,70 @@ function ProductForm({
         </label>
       )}
 
-      {/* Салбар */}
-      <label className="block">
-        <span className={lbl}>Салбар *</span>
-        <select
-          name="branch"
-          className={field}
-          value={v.branch}
-          onChange={(e) => set("branch", e.target.value)}
-        >
-          <option value="park_od">Park-Od Mall</option>
-          <option value="riveria">Parko Riveria</option>
-          <option value="online">Захиалга (онлайн)</option>
-        </select>
-      </label>
+      {/* Салбар & нөөц */}
+      <div className="block sm:col-span-2 lg:col-span-3">
+        <span className={lbl}>Салбар & нөөц *</span>
+        <div className="mt-1 flex flex-wrap gap-4 rounded-md border bg-background p-4">
+          {/* Park-Od */}
+          <label className="flex items-center gap-2 text-sm font-medium">
+            <input
+              type="checkbox"
+              name="has_park_od"
+              checked={v.has_park_od}
+              onChange={(e) => set("has_park_od", e.target.checked)}
+            />
+            Park-Od Mall
+          </label>
+          {v.has_park_od && (
+            <label className="flex items-center gap-2 text-sm">
+              <span className="text-muted">Нөөц:</span>
+              <input
+                type="number"
+                name="stock_park_od"
+                min={0}
+                value={v.stock_park_od}
+                onChange={(e) => set("stock_park_od", e.target.value)}
+                className="w-20 rounded border bg-surface px-2 py-1 text-sm"
+                placeholder="0"
+              />
+            </label>
+          )}
+          {/* Riveria */}
+          <label className="flex items-center gap-2 text-sm font-medium">
+            <input
+              type="checkbox"
+              name="has_riveria"
+              checked={v.has_riveria}
+              onChange={(e) => set("has_riveria", e.target.checked)}
+            />
+            Parko Riveria
+          </label>
+          {v.has_riveria && (
+            <label className="flex items-center gap-2 text-sm">
+              <span className="text-muted">Нөөц:</span>
+              <input
+                type="number"
+                name="stock_riveria"
+                min={0}
+                value={v.stock_riveria}
+                onChange={(e) => set("stock_riveria", e.target.value)}
+                className="w-20 rounded border bg-surface px-2 py-1 text-sm"
+                placeholder="0"
+              />
+            </label>
+          )}
+          {/* Online */}
+          <label className="flex items-center gap-2 text-sm font-medium">
+            <input
+              type="checkbox"
+              name="is_online"
+              checked={v.is_online}
+              onChange={(e) => set("is_online", e.target.checked)}
+            />
+            Захиалга (онлайн)
+          </label>
+        </div>
+      </div>
       {isApparel && (
         <label className="block">
           <span className={lbl}>Загвар (fit)</span>
@@ -1006,17 +1108,6 @@ function ProductForm({
       </label>
 
       {/* 6. Нөөц, Хэмжээ */}
-      <label className="block">
-        <span className={lbl}>Нийт нөөц (хоосон бол өнгөнүүдөөс)</span>
-        <input
-          name="total_stock"
-          type="number"
-          min={0}
-          value={v.total_stock}
-          onChange={(e) => set("total_stock", e.target.value)}
-          className={field}
-        />
-      </label>
       {isApparel && (
         <label className="block">
           <span className={lbl}>Хэмжээнүүд (таслалаар)</span>
@@ -1105,13 +1196,13 @@ function ProductForm({
       {/* Идэвхтэй, Онцлох, Шинэ */}
       <div className="flex flex-wrap items-center gap-5 sm:col-span-2 lg:col-span-3">
         <label className="flex items-center gap-2 text-sm">
-          <input type="checkbox" name="is_active" defaultChecked /> Идэвхтэй
+          <input type="checkbox" name="is_active" defaultChecked={editProduct?.isActive ?? true} /> Идэвхтэй
         </label>
         <label className="flex items-center gap-2 text-sm">
-          <input type="checkbox" name="is_featured" /> Онцлох
+          <input type="checkbox" name="is_featured" defaultChecked={editProduct?.isFeatured ?? false} /> Онцлох
         </label>
         <label className="flex items-center gap-2 text-sm">
-          <input type="checkbox" name="is_new_arrival" /> Шинэ бараа
+          <input type="checkbox" name="is_new_arrival" defaultChecked={editProduct?.isNewArrival ?? false} /> Шинэ бараа
         </label>
       </div>
 
@@ -1126,7 +1217,7 @@ function ProductForm({
           disabled={pending || uploading}
           className="rounded-md bg-foreground px-6 py-2.5 text-sm font-semibold text-white hover:bg-accent hover:text-foreground disabled:opacity-60"
         >
-          {pending ? "Хадгалж байна…" : "Бараа хадгалах"}
+          {pending ? "Хадгалж байна…" : isEdit ? "Өөрчлөлт хадгалах" : "Бараа хадгалах"}
         </button>
       </div>
 
