@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useActionState, useState } from "react";
-import { login, signup, type AuthState } from "./actions";
+import { login, signup, forgotPassword, type AuthState } from "./actions";
 import { classNames } from "@/lib/utils";
 import { CheckIcon, ArrowLeftIcon } from "@/components/Icons";
 
@@ -13,7 +13,7 @@ const HIGHLIGHTS = [
 ];
 
 export function AuthCard({ next }: { next: string }) {
-  const [mode, setMode] = useState<"login" | "register">("login");
+  const [mode, setMode] = useState<"login" | "register" | "forgot">("login");
 
   return (
     <div className="container-page flex justify-center py-10 sm:py-16">
@@ -63,8 +63,25 @@ export function AuthCard({ next }: { next: string }) {
             </p>
           </div>
 
+          {/* Forgot password panel */}
+          {mode === "forgot" && (
+            <div className="space-y-4">
+              <button
+                onClick={() => setMode("login")}
+                className="flex items-center gap-1.5 text-sm text-muted hover:text-foreground"
+              >
+                <ArrowLeftIcon className="h-4 w-4" /> Буцах
+              </button>
+              <div>
+                <h2 className="font-serif text-xl font-bold">Нууц үг мартсан</h2>
+                <p className="mt-1 text-sm text-muted">И-мэйлд нууц үг шинэчлэх холбоос илгээнэ.</p>
+              </div>
+              <ForgotPanel onDone={() => setMode("login")} />
+            </div>
+          )}
+
           {/* Tabs */}
-          <div className="relative mb-8 flex rounded-full bg-background p-1 text-sm font-semibold">
+          <div className={classNames("relative mb-8 flex rounded-full bg-background p-1 text-sm font-semibold", mode === "forgot" ? "hidden" : "")}>
             <span
               className={classNames(
                 "absolute inset-y-1 w-[calc(50%-0.25rem)] rounded-full bg-foreground shadow transition-transform duration-300",
@@ -94,7 +111,7 @@ export function AuthCard({ next }: { next: string }) {
           </div>
 
           {mode === "login" ? (
-            <LoginPanel next={next} />
+            <LoginPanel next={next} onForgot={() => setMode("forgot")} />
           ) : (
             <RegisterPanel next={next} onDone={() => setMode("login")} />
           )}
@@ -143,7 +160,7 @@ function Alert({ state }: { state: AuthState }) {
   );
 }
 
-function LoginPanel({ next }: { next: string }) {
+function LoginPanel({ next, onForgot }: { next: string; onForgot: () => void }) {
   const [state, action, pending] = useActionState<AuthState, FormData>(
     login,
     undefined
@@ -153,6 +170,11 @@ function LoginPanel({ next }: { next: string }) {
       <input type="hidden" name="next" value={next} />
       <Field label="И-мэйл" name="email" type="email" autoComplete="email" placeholder="та@example.mn" required />
       <Field label="Нууц үг" name="password" type="password" autoComplete="current-password" placeholder="••••••••" required />
+      <div className="text-right">
+        <button type="button" onClick={onForgot} className="text-xs text-muted hover:text-foreground underline">
+          Нууц үг мартсан?
+        </button>
+      </div>
       <Alert state={state} />
       <button
         disabled={pending}
@@ -160,6 +182,31 @@ function LoginPanel({ next }: { next: string }) {
       >
         {pending ? "Нэвтэрч байна…" : "Нэвтрэх"}
       </button>
+    </form>
+  );
+}
+
+function ForgotPanel({ onDone }: { onDone: () => void }) {
+  const [state, action, pending] = useActionState<AuthState, FormData>(
+    forgotPassword,
+    undefined
+  );
+  return (
+    <form action={action} className="space-y-4">
+      <Field label="И-мэйл" name="email" type="email" autoComplete="email" placeholder="та@example.mn" required />
+      <Alert state={state} />
+      {state?.message ? (
+        <button type="button" onClick={onDone} className="w-full rounded-xl bg-foreground py-3.5 text-sm font-semibold text-white hover:bg-accent hover:text-foreground">
+          Нэвтрэх рүү очих
+        </button>
+      ) : (
+        <button
+          disabled={pending}
+          className="w-full rounded-xl bg-foreground py-3.5 text-sm font-semibold text-white transition hover:bg-accent hover:text-foreground disabled:opacity-60"
+        >
+          {pending ? "Илгээж байна…" : "Холбоос илгээх"}
+        </button>
+      )}
     </form>
   );
 }

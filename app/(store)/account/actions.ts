@@ -77,3 +77,37 @@ export async function logout() {
   await supabase.auth.signOut();
   redirect("/account");
 }
+
+// Send password reset email
+export async function forgotPassword(
+  _prev: AuthState,
+  formData: FormData
+): Promise<AuthState> {
+  const email = String(formData.get("email") ?? "").trim();
+  if (!email) return { error: "И-мэйл хаягаа оруулна уу." };
+
+  const supabase = await createClient();
+  const { error } = await supabase.auth.resetPasswordForEmail(email, {
+    redirectTo: `${process.env.NEXT_PUBLIC_SITE_URL ?? "https://www.chicagooutlet.mn"}/account/reset-password`,
+  });
+
+  if (error) return { error: "И-мэйл илгээхэд алдаа гарлаа. Дахин оролдоно уу." };
+
+  return { message: "Нууц үг шинэчлэх холбоос и-мэйлд таны хаяг руу илгээгдлээ." };
+}
+
+// Set new password (called from /account/reset-password page)
+export async function resetPassword(
+  _prev: AuthState,
+  formData: FormData
+): Promise<AuthState> {
+  const password = String(formData.get("password") ?? "");
+  if (password.length < 8) return { error: "Нууц үг хамгийн багадаа 8 тэмдэгт байх ёстой." };
+
+  const supabase = await createClient();
+  const { error } = await supabase.auth.updateUser({ password });
+
+  if (error) return { error: "Нууц үг шинэчлэхэд алдаа гарлаа. Холбоос хугацаа дууссан байж магадгүй." };
+
+  return { message: "Нууц үг амжилттай шинэчлэгдлээ! Одоо нэвтэрч болно." };
+}
