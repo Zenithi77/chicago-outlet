@@ -110,9 +110,10 @@ export function AuthCard({ next }: { next: string }) {
             </button>
           </div>
 
-          {mode === "login" ? (
+          {mode === "login" && (
             <LoginPanel next={next} onForgot={() => setMode("forgot")} />
-          ) : (
+          )}
+          {mode === "register" && (
             <RegisterPanel next={next} onDone={() => setMode("login")} />
           )}
 
