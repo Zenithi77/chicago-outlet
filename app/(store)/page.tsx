@@ -14,13 +14,52 @@ async function getHeroSettings(): Promise<Record<string, string>> {
     const { data } = await supabase
       .from("site_settings")
       .select("key, value")
-      .in("key", ["hero_park_od", "hero_riveria", "hero_online"]);
+      .in("key", [
+        "hero_park_od",
+        "hero_riveria",
+        "hero_online",
+        "promo1_image",
+        "promo1_eyebrow",
+        "promo1_title",
+        "promo1_subtitle",
+        "promo1_cta_label",
+        "promo1_cta_href",
+        "promo2_image",
+        "promo2_eyebrow",
+        "promo2_title",
+        "promo2_subtitle",
+        "promo2_cta_label",
+        "promo2_cta_href",
+      ]);
     const map: Record<string, string> = {};
     for (const row of data ?? []) map[row.key] = row.value;
     return map;
   } catch {
     return {};
   }
+}
+
+type PromoBanner = {
+  image: string;
+  eyebrow: string;
+  title: string;
+  subtitle: string;
+  ctaLabel: string;
+  ctaHref: string;
+};
+
+function readPromo(settings: Record<string, string>, prefix: "promo1_" | "promo2_"): PromoBanner | null {
+  const b: PromoBanner = {
+    image: (settings[`${prefix}image`] ?? "").trim(),
+    eyebrow: (settings[`${prefix}eyebrow`] ?? "").trim(),
+    title: (settings[`${prefix}title`] ?? "").trim(),
+    subtitle: (settings[`${prefix}subtitle`] ?? "").trim(),
+    ctaLabel: (settings[`${prefix}cta_label`] ?? "").trim(),
+    ctaHref: (settings[`${prefix}cta_href`] ?? "").trim(),
+  };
+  // Hide the banner entirely when admin has cleared every field.
+  if (!b.image && !b.title && !b.subtitle && !b.eyebrow && !b.ctaLabel) return null;
+  return b;
 }
 
 export default async function HomePage() {
@@ -30,6 +69,8 @@ export default async function HomePage() {
   const onSale = PRODUCTS.filter((p) => p.isOnSale).slice(0, 4);
 
   const heroSettings = await getHeroSettings();
+  const promo1 = readPromo(heroSettings, "promo1_");
+  const promo2 = readPromo(heroSettings, "promo2_");
 
   const branches = [
     {
@@ -85,51 +126,14 @@ export default async function HomePage() {
       </Section>
 
       {/* Featured collection banner */}
-      <section className="container-page py-6">
-        <div className="relative overflow-hidden rounded-2xl">
-          <ProductImage seed="urban-essentials-banner" label="Urban Essentials" className="h-64 w-full md:h-80" />
-          <div className="absolute inset-0 flex flex-col items-start justify-center bg-gradient-to-r from-black/65 to-transparent px-8 md:px-14">
-            <p className="text-xs font-semibold uppercase tracking-[0.3em] text-accent">
-              Цуглуулга
-            </p>
-            <h3 className="mt-2 font-serif text-3xl font-bold text-white md:text-4xl">
-              Urban Essentials
-            </h3>
-            <p className="mt-2 max-w-sm text-sm text-white/75">
-              Өдөр тутмын төгс суурь — өмссөн бүрдээ илүү сайхан.
-            </p>
-            <Link
-              href="/shop?collection=Urban%20Essentials"
-              className="mt-5 rounded-md bg-white px-6 py-2.5 text-sm font-semibold text-foreground hover:bg-accent"
-            >
-              Худалдан авах
-            </Link>
-          </div>
-        </div>
-      </section>
+      {promo1 && <PromoBanner banner={promo1} variant="image" />}
 
       <Section title="Онцлох цуглуулга" subtitle="Urban Essentials">
         <Grid products={featured} />
       </Section>
 
       {/* Sale banner */}
-      <section className="container-page py-8">
-        <div className="rounded-2xl bg-foreground px-8 py-10 text-center text-white">
-          <p className="text-xs font-semibold uppercase tracking-[0.3em] text-accent">
-            Хязгаарлагдмал хугацаа
-          </p>
-          <h3 className="mt-3 font-serif text-3xl font-bold md:text-4xl">
-            Sale & Outlet — 30% хүртэл
-          </h3>
-          <p className="mt-2 text-white/70">CHICAGO20 кодоор ₮200,000+ захиалгад 20% хямдрал.</p>
-          <Link
-            href="/shop?gender=sale"
-            className="mt-6 inline-block rounded-md bg-accent px-7 py-3 text-sm font-semibold text-foreground hover:bg-white"
-          >
-            Хямдрал үзэх
-          </Link>
-        </div>
-      </section>
+      {promo2 && <PromoBanner banner={promo2} variant="image" />}
 
       <Section title="Шилдэг борлуулалт" subtitle="Best Sellers">
         <Grid products={bestSellers} />
@@ -182,5 +186,48 @@ function Grid({ products }: { products: typeof PRODUCTS }) {
         <ProductCard key={p.id} product={p} />
       ))}
     </div>
+  );
+}
+
+function PromoBanner({ banner, variant }: { banner: PromoBanner; variant: "image" }) {
+  void variant;
+  return (
+    <section className="container-page py-6">
+      <div className="relative overflow-hidden rounded-2xl">
+        {banner.image ? (
+          // eslint-disable-next-line @next/next/no-img-element
+          <img
+            src={banner.image}
+            alt={banner.title}
+            className="h-64 w-full object-cover md:h-80"
+          />
+        ) : (
+          <div className="h-64 w-full bg-gradient-to-br from-stone-700 to-stone-500 md:h-80" />
+        )}
+        <div className="absolute inset-0 flex flex-col items-start justify-center bg-gradient-to-r from-black/65 to-transparent px-8 md:px-14">
+          {banner.eyebrow && (
+            <p className="text-xs font-semibold uppercase tracking-[0.3em] text-accent">
+              {banner.eyebrow}
+            </p>
+          )}
+          {banner.title && (
+            <h3 className="mt-2 font-serif text-3xl font-bold text-white md:text-4xl">
+              {banner.title}
+            </h3>
+          )}
+          {banner.subtitle && (
+            <p className="mt-2 max-w-sm text-sm text-white/75">{banner.subtitle}</p>
+          )}
+          {banner.ctaLabel && banner.ctaHref && (
+            <Link
+              href={banner.ctaHref}
+              className="mt-5 rounded-md bg-white px-6 py-2.5 text-sm font-semibold text-foreground hover:bg-accent"
+            >
+              {banner.ctaLabel}
+            </Link>
+          )}
+        </div>
+      </div>
+    </section>
   );
 }

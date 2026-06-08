@@ -26,13 +26,13 @@ const GENDER_LINKS = [
   { label: "Хямдрал", value: "sale", accent: true },
 ];
 
-const ANNOUNCEMENTS = [
+const DEFAULT_ANNOUNCEMENTS = [
   `₮${BRAND.freeShippingThreshold.toLocaleString()}+ захиалгад үнэгүй хүргэлт`,
   "14 хоногийн дотор асуудалгүй буцаалт",
   "100% жинхэнэ брэндийн бүтээгдэхүүн",
 ];
 
-export function Header() {
+export function Header({ announcements }: { announcements?: string[] } = {}) {
   const router = useRouter();
   const count = useCart((s) => s.count());
   const setOpen = useCart((s) => s.setOpen);
@@ -44,6 +44,9 @@ export function Header() {
   const [announce, setAnnounce] = useState(0);
   const [query, setQuery] = useState("");
   const searchInputRef = useRef<HTMLInputElement>(null);
+
+  const ANNOUNCEMENTS =
+    announcements && announcements.length > 0 ? announcements : DEFAULT_ANNOUNCEMENTS;
 
   useEffect(() => setMounted(true), []);
 

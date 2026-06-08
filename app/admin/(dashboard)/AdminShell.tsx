@@ -82,7 +82,7 @@ export function AdminShell({
           <form action={logout}>
             <button
               type="submit"
-              className="mt-1 flex w-full items-center gap-2 rounded-md px-3 py-2 text-left text-sm text-danger hover:bg-background"
+              className="mt-1 flex w-full items-center justify-center gap-2 rounded-md border border-danger/40 bg-surface px-3 py-2 text-sm font-semibold text-danger transition hover:bg-danger hover:text-white"
             >
               <LogoutIcon className="h-4 w-4" /> Гарах
             </button>
@@ -104,7 +104,10 @@ export function AdminShell({
               <ArrowUpRightIcon className="h-4 w-4" />
             </Link>
             <form action={logout}>
-              <button type="submit" className="text-sm font-medium text-danger">
+              <button
+                type="submit"
+                className="rounded-full border border-danger/40 px-3 py-1 text-xs font-semibold text-danger transition hover:bg-danger hover:text-white"
+              >
                 Гарах
               </button>
             </form>

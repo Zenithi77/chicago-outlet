@@ -5,17 +5,42 @@ import { HeroSettingsClient } from "./HeroSettingsClient";
 
 export const dynamic = "force-dynamic";
 
+const KEYS = [
+  // Branch hero images (existing)
+  "hero_park_od",
+  "hero_riveria",
+  "hero_online",
+  // Top announcement bar
+  "announcement_1",
+  "announcement_2",
+  "announcement_3",
+  // Promo banner 1
+  "promo1_image",
+  "promo1_eyebrow",
+  "promo1_title",
+  "promo1_subtitle",
+  "promo1_cta_label",
+  "promo1_cta_href",
+  // Promo banner 2
+  "promo2_image",
+  "promo2_eyebrow",
+  "promo2_title",
+  "promo2_subtitle",
+  "promo2_cta_label",
+  "promo2_cta_href",
+];
+
 export default async function HeroSettingsPage() {
   const profile = await getProfile();
   if (!isStaff(profile?.role)) redirect("/account");
 
   const supabase = await createClient();
-  let settings: Record<string, string> = {};
+  const settings: Record<string, string> = {};
   try {
     const { data } = await supabase
       .from("site_settings")
       .select("key, value")
-      .in("key", ["hero_park_od", "hero_riveria", "hero_online"]);
+      .in("key", KEYS);
     for (const row of data ?? []) {
       settings[row.key] = row.value;
     }

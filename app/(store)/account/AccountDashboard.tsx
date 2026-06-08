@@ -54,7 +54,10 @@ export function AccountDashboard({
             </Link>
           )}
           <form action={logout}>
-            <button className="text-sm text-accent-dark underline underline-offset-4">
+            <button
+              type="submit"
+              className="inline-flex items-center gap-2 rounded-full border border-danger/40 bg-surface px-5 py-2.5 text-sm font-semibold text-danger transition hover:bg-danger hover:text-white"
+            >
               Гарах
             </button>
           </form>

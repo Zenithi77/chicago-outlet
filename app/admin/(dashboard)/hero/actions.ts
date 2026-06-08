@@ -29,3 +29,53 @@ export async function saveHeroUrl(
   revalidatePath("/admin/hero");
   return {};
 }
+
+/**
+ * Generic setter for any site_settings key (text values: announcement
+ * lines, promo banner copy, image URLs, CTA links, etc.).
+ */
+export async function saveSetting(
+  key: string,
+  value: string
+): Promise<{ error?: string }> {
+  const profile = await getProfile();
+  if (!isStaff(profile?.role)) return { error: "Зөвшөөрөлгүй." };
+
+  try {
+    const db = createAdminClient();
+    await db
+      .from("site_settings")
+      .upsert({ key, value, updated_at: new Date().toISOString() });
+  } catch {
+    return { error: "Хадгалахад алдаа гарлаа." };
+  }
+
+  revalidatePath("/");
+  revalidatePath("/admin/hero");
+  return {};
+}
+
+/** Save many settings at once (used by the promo banner form). */
+export async function saveSettings(
+  entries: Record<string, string>
+): Promise<{ error?: string }> {
+  const profile = await getProfile();
+  if (!isStaff(profile?.role)) return { error: "Зөвшөөрөлгүй." };
+
+  try {
+    const db = createAdminClient();
+    const now = new Date().toISOString();
+    const rows = Object.entries(entries).map(([key, value]) => ({
+      key,
+      value,
+      updated_at: now,
+    }));
+    await db.from("site_settings").upsert(rows);
+  } catch {
+    return { error: "Хадгалахад алдаа гарлаа." };
+  }
+
+  revalidatePath("/");
+  revalidatePath("/admin/hero");
+  return {};
+}
