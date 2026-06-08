@@ -572,7 +572,7 @@ function ProductForm({
   const lookup = async (codeRaw: string) => {
     const code = codeRaw.replace(/\D/g, "").trim();
     if (code.length < 6) {
-      setLookupMsg({ ok: false, text: "Зөв штрих код оруулна уу." });
+      setLookupMsg({ ok: false, text: "Зөв Barcode  оруулна уу." });
       return;
     }
     setLooking(true);
@@ -585,7 +585,7 @@ function ProductForm({
           ok: false,
           text:
             data.error ??
-            "Энэ штрих кодоор бараа олдсонгүй. Гараараа бөглөнө үү.",
+            "Энэ Barcode оор бараа олдсонгүй. Гараараа бөглөнө үү.",
         });
         return;
       }
@@ -735,11 +735,11 @@ function ProductForm({
         </h2>
       </div>
 
-      {/* Штрих кодоор хайх */}
+      {/* Barcode оор хайх */}
       <div className="sm:col-span-2 lg:col-span-3">
         <div className="rounded-xl border border-accent/30 bg-accent/5 p-4">
           <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-accent-dark">
-            Штрих кодоор бараа татах
+            Barcode оор бараа татах
           </p>
           <div className="flex flex-wrap items-center gap-2">
             <input
@@ -752,7 +752,7 @@ function ProductForm({
                 }
               }}
               inputMode="numeric"
-              placeholder="Штрих код (EAN/UPC)…"
+              placeholder="Barcode  (EAN/UPC)…"
               className="min-w-[180px] flex-1 rounded-md border bg-background px-3 py-2 text-sm font-mono outline-none"
             />
             <button

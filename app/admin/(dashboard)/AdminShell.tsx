@@ -13,6 +13,7 @@ import {
   TagIcon,
   ArrowUpRightIcon,
   LogoutIcon,
+  ImageIcon,
 } from "@/components/Icons";
 
 const NAV = [
@@ -21,6 +22,7 @@ const NAV = [
   { href: "/admin/orders", label: "Захиалга", Icon: ClipboardIcon },
   { href: "/admin/customers", label: "Хэрэглэгч", Icon: UsersIcon },
   { href: "/admin/coupons", label: "Купон & Урамшуулал", Icon: TagIcon },
+  { href: "/admin/hero", label: "Нүүр баннер", Icon: ImageIcon },
 ];
 
 const ROLE_LABEL: Record<Role, string> = {

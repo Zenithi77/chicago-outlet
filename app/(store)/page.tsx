@@ -4,12 +4,53 @@ import { ProductCard } from "@/components/ProductCard";
 import { ProductImage } from "@/components/ProductImage";
 import { HeroVideo } from "@/components/HeroVideo";
 import { ArrowRightIcon } from "@/components/Icons";
+import { createClient } from "@/lib/supabase/server";
 
-export default function HomePage() {
+export const dynamic = "force-dynamic";
+
+async function getHeroSettings(): Promise<Record<string, string>> {
+  try {
+    const supabase = await createClient();
+    const { data } = await supabase
+      .from("site_settings")
+      .select("key, value")
+      .in("key", ["hero_park_od", "hero_riveria", "hero_online"]);
+    const map: Record<string, string> = {};
+    for (const row of data ?? []) map[row.key] = row.value;
+    return map;
+  } catch {
+    return {};
+  }
+}
+
+export default async function HomePage() {
   const newArrivals = PRODUCTS.filter((p) => p.isNewArrival && p.isActive).slice(0, 8);
   const featured = PRODUCTS.filter((p) => p.collection === "Urban Essentials").slice(0, 4);
   const bestSellers = PRODUCTS.filter((p) => p.collection === "Best Sellers" || p.reviewCount > 150).slice(0, 4);
   const onSale = PRODUCTS.filter((p) => p.isOnSale).slice(0, 4);
+
+  const heroSettings = await getHeroSettings();
+
+  const branches = [
+    {
+      label: "Park-Od Mall",
+      href: "/shop?branch=park_od",
+      seed: heroSettings["hero_park_od"] || "cat-park-od",
+      sub: "Ulaanbaatar, Bayanzurkh, 25 khoroo",
+    },
+    {
+      label: "Parko Riveria",
+      href: "/shop?branch=riveria",
+      seed: heroSettings["hero_riveria"] || "cat-riveria",
+      sub: "Ulaanbaatar, Bayangol, 26 khoroo",
+    },
+    {
+      label: "Захиалга",
+      href: "/shop?branch=online",
+      seed: heroSettings["hero_online"] || "cat-online",
+      sub: "Хаана ч хүргэлттэй",
+    },
+  ];
 
   return (
     <div className="animate-fade-up">
@@ -19,11 +60,7 @@ export default function HomePage() {
       {/* Category grid */}
       <section className="container-page py-14">
         <div className="grid grid-cols-3 gap-3">
-          {[
-            { label: "Park-Od Mall", href: "/shop?branch=park_od", seed: "/branch-park-od.jpg", sub: "Ulaanbaatar, Bayanzurkh, 25 khoroo" },
-            { label: "Parko Riveria", href: "/shop?branch=riveria", seed: "/branch-riveria.jpg", sub: "Ulaanbaatar, Bayangol, 26 khoroo " },
-            { label: "Захиалга", href: "/shop?branch=online", seed: "/branch-online.jpg", sub: "Хаана ч хүргэлттэй" },
-          ].map((c) => (
+          {branches.map((c) => (
             <Link
               key={c.label}
               href={c.href}
