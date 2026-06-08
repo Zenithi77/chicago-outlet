@@ -45,7 +45,7 @@ export async function saveHeroUrl(
   const profile = await getProfile();
   if (!isStaff(profile?.role)) return { error: "Зөвшөөрөлгүй." };
 
-  if (!/^https?:\/\//i.test(url)) return { error: "Зөв URL оруулна уу." };
+  if (url !== "" && !/^https?:\/\//i.test(url)) return { error: "Зөв URL оруулна уу." };
 
   const db = createAdminClient();
   await db
