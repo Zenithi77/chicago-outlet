@@ -18,7 +18,15 @@ async function fetchProducts(): Promise<Product[]> {
       return PRODUCTS;
     }
 
-    return data.map((row) => ({
+    return data.map((row) => {
+      // Apply discount expiry: a past `discount_expires_at` clears the sale.
+      const expiresAt = row.discount_expires_at as string | null | undefined;
+      const expired = expiresAt ? new Date(expiresAt).getTime() < Date.now() : false;
+      const rawDiscount = row.discount_percent ?? 0;
+      const discountPercent = expired ? 0 : rawDiscount;
+      const isOnSale = expired ? false : Boolean(row.is_on_sale);
+
+      return {
       id: row.sku ?? row.id,
       name: row.name,
       slug: row.slug,
@@ -30,14 +38,14 @@ async function fetchProducts(): Promise<Product[]> {
       shortDescription: row.short_description ?? "",
       price: row.price,
       currency: row.currency ?? "MNT",
-      discountPercent: row.discount_percent ?? 0,
+      discountPercent,
       images: row.images ?? [],
       sizes: row.sizes ?? [],
       colors: row.colors ?? [],
       tags: row.tags ?? [],
       isFeatured: row.is_featured ?? false,
       isNewArrival: row.is_new_arrival ?? false,
-      isOnSale: row.is_on_sale ?? false,
+      isOnSale,
       isActive: row.is_active ?? true,
       careInstructions: row.care_instructions ?? "",
       material: row.material ?? "",
@@ -51,7 +59,8 @@ async function fetchProducts(): Promise<Product[]> {
       branchStock: row.branch_stock ?? {},
       isOnline: row.is_online ?? false,
       createdAt: row.created_at,
-    }));
+      };
+    });
   } catch {
     return PRODUCTS;
   }

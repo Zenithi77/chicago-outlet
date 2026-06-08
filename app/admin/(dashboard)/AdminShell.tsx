@@ -19,6 +19,7 @@ import {
 const NAV = [
   { href: "/admin", label: "Хяналтын самбар", Icon: DashboardIcon },
   { href: "/admin/products", label: "Бараа", Icon: BoxIcon },
+  { href: "/admin/discounts", label: "Хямдрал", Icon: TagIcon },
   { href: "/admin/orders", label: "Захиалга", Icon: ClipboardIcon },
   { href: "/admin/customers", label: "Хэрэглэгч", Icon: UsersIcon },
   { href: "/admin/coupons", label: "Купон & Урамшуулал", Icon: TagIcon },

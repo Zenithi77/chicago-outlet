@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { ProductImage } from "@/components/ProductImage";
 import { finalPrice, formatMNT, classNames } from "@/lib/utils";
 import { CameraIcon, UploadIcon, CloudIcon, CloseIcon } from "@/components/Icons";
+import { CATEGORIES } from "@/lib/data/categories";
 
 // ── Excel import state lives here so it sits above the form ──────────────────
 function useExcelImport(onSuccess: (msg: string) => void) {
@@ -977,11 +978,18 @@ function ProductForm({
         <span className={lbl}>Дэд ангилал</span>
         <input
           name="subcategory"
-          placeholder="Shirts"
+          list="subcategory-suggestions"
+          placeholder="Жишээ: Футболк (шинээр бичээд оруулж болно)"
           value={v.subcategory}
           onChange={(e) => set("subcategory", e.target.value)}
           className={field}
         />
+        <datalist id="subcategory-suggestions">
+          {/* Suggest predefined subcategories for the chosen top-level category. */}
+          {(CATEGORIES.find((c) => c.name === v.category)?.children ?? []).map((s) => (
+            <option key={s.slug} value={s.name} />
+          ))}
+        </datalist>
       </label>
       {isApparel && (
         <label className="block">

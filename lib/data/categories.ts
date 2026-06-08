@@ -1,73 +1,67 @@
 export interface CategoryNode {
-  name: string;
-  nameMn: string;
+  name: string;        // canonical key stored in products.category
+  nameMn: string;      // display label
   slug: string;
   children?: { name: string; nameMn: string; slug: string }[];
 }
 
+// Top-level categories. `name` is what gets stored in products.category and
+// what the shop filter / admin select use. Subcategory on the product is free
+// text — new values automatically appear under the relevant parent.
 export const CATEGORIES: CategoryNode[] = [
   {
-    name: "Tops",
-    nameMn: "Дээд хувцас",
-    slug: "tops",
+    name: "Хувцас",
+    nameMn: "Хувцас",
+    slug: "huvtsas",
     children: [
-      { name: "T-Shirts", nameMn: "Футболк", slug: "t-shirts" },
-      { name: "Shirts", nameMn: "Цамц", slug: "shirts" },
-      { name: "Sweaters & Hoodies", nameMn: "Цамц & Гадуур", slug: "sweaters" },
-      { name: "Long Sleeves", nameMn: "Урт ханцуй", slug: "long-sleeves" },
+      { name: "Дээд хувцас",   nameMn: "Дээд хувцас",   slug: "tops" },
+      { name: "Доод хувцас",   nameMn: "Доод хувцас",   slug: "bottoms" },
+      { name: "Гадуур хувцас", nameMn: "Гадуур хувцас", slug: "outerwear" },
+      { name: "Даашинз",       nameMn: "Даашинз",       slug: "dresses" },
+      { name: "Гутал",         nameMn: "Гутал",         slug: "shoes" },
+      { name: "Гоёл чимэглэл", nameMn: "Гоёл чимэглэл", slug: "accessories" },
     ],
   },
   {
-    name: "Bottoms",
-    nameMn: "Доод хувцас",
-    slug: "bottoms",
+    name: "Гоо сайхан",
+    nameMn: "Гоо сайхан",
+    slug: "goo-saihan",
     children: [
-      { name: "Jeans", nameMn: "Жинс", slug: "jeans" },
-      { name: "Trousers & Chinos", nameMn: "Өмд & Чино", slug: "trousers" },
-      { name: "Shorts", nameMn: "Богино өмд", slug: "shorts" },
-      { name: "Joggers", nameMn: "Жоггер", slug: "joggers" },
+      { name: "Арьс арчилгаа", nameMn: "Арьс арчилгаа", slug: "skincare" },
+      { name: "Үс арчилгаа",   nameMn: "Үс арчилгаа",   slug: "haircare" },
+      { name: "Гоо засал",     nameMn: "Гоо засал",     slug: "makeup" },
+      { name: "Парфюм",        nameMn: "Парфюм",        slug: "fragrance" },
     ],
   },
   {
-    name: "Outerwear",
-    nameMn: "Гадуур хувцас",
-    slug: "outerwear",
+    name: "Гэр ахуй",
+    nameMn: "Гэр ахуй",
+    slug: "ger-ahui",
     children: [
-      { name: "Jackets", nameMn: "Куртка", slug: "jackets" },
-      { name: "Coats", nameMn: "Пальто", slug: "coats" },
-      { name: "Vests", nameMn: "Хантааз", slug: "vests" },
+      { name: "Ор дэрний",       nameMn: "Ор дэрний",       slug: "bedding" },
+      { name: "Гал тогоо",       nameMn: "Гал тогоо",       slug: "kitchen" },
+      { name: "Цэвэрлэгээ",      nameMn: "Цэвэрлэгээ",      slug: "cleaning" },
+      { name: "Хувийн арчилгаа", nameMn: "Хувийн арчилгаа", slug: "personal-care" },
     ],
   },
   {
-    name: "Dresses",
-    nameMn: "Даашинз",
-    slug: "dresses",
+    name: "Хүнс & Витамин",
+    nameMn: "Хүнс & Витамин",
+    slug: "huns-vitamin",
     children: [
-      { name: "Casual Dresses", nameMn: "Энгийн даашинз", slug: "casual-dresses" },
-      { name: "Midi & Maxi", nameMn: "Миди & Макси", slug: "midi-maxi" },
+      { name: "Витамин",     nameMn: "Витамин",     slug: "vitamins" },
+      { name: "Спорт хүнс",  nameMn: "Спорт хүнс",  slug: "sports-nutrition" },
+      { name: "Хүнс",        nameMn: "Хүнс",        slug: "food" },
+      { name: "Ундаа",       nameMn: "Ундаа",       slug: "beverages" },
     ],
   },
-  {
-    name: "Shoes",
-    nameMn: "Гутал",
-    slug: "shoes",
-    children: [
-      { name: "Sneakers", nameMn: "Пүүз", slug: "sneakers" },
-      { name: "Boots", nameMn: "Гутал", slug: "boots" },
-      { name: "Loafers", nameMn: "Лоафер", slug: "loafers" },
-    ],
-  },
-  {
-    name: "Accessories",
-    nameMn: "Гоёл чимэглэл",
-    slug: "accessories",
-    children: [
-      { name: "Bags", nameMn: "Цүнх", slug: "bags" },
-      { name: "Hats & Caps", nameMn: "Малгай", slug: "hats" },
-      { name: "Belts", nameMn: "Бүс", slug: "belts" },
-      { name: "Sunglasses", nameMn: "Нүдний шил", slug: "sunglasses" },
-    ],
-  },
+];
+
+// Genders used as a secondary breakdown under "Хувцас".
+export const GENDERS: { value: "men" | "women" | "kids"; nameMn: string }[] = [
+  { value: "men",   nameMn: "Эрэгтэй" },
+  { value: "women", nameMn: "Эмэгтэй" },
+  { value: "kids",  nameMn: "Хүүхэд" },
 ];
 
 export const COLLECTIONS = [

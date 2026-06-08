@@ -1,6 +1,6 @@
 "use client";
 
-import { Suspense, useMemo, useState } from "react";
+import { Suspense, useEffect, useMemo, useState } from "react";
 import { useSearchParams } from "next/navigation";
 import { CATEGORIES } from "@/lib/data/categories";
 import { ProductCard } from "@/components/ProductCard";
@@ -25,17 +25,38 @@ function ShopContent({ products }: { products: Product[] }) {
   const genderParam = params.get("gender") ?? "";
   const branchParam = params.get("branch") ?? "";
   const categoryParam = params.get("category") ?? "";
+  const subcategoryParam = params.get("subcategory") ?? "";
   const collectionParam = params.get("collection") ?? "";
+
+  // Live price bounds derived from the current product list. These shift as
+  // products are added / removed so the slider always covers the real range.
+  const { dataMin, dataMax } = useMemo(() => {
+    const prices = products.filter((p) => p.isActive).map((p) => finalPrice(p));
+    if (prices.length === 0) return { dataMin: 0, dataMax: 1000000 };
+    const min = Math.floor(Math.min(...prices) / 1000) * 1000;
+    const max = Math.ceil(Math.max(...prices) / 1000) * 1000;
+    return { dataMin: min, dataMax: Math.max(max, min + 1000) };
+  }, [products]);
 
   const [sort, setSort] = useState("relevance");
   const [activeBranch, setActiveBranch] = useState<string>(branchParam);
   const [activeCats, setActiveCats] = useState<string[]>(
     categoryParam ? [categoryParam] : []
   );
+  const [activeSubs, setActiveSubs] = useState<string[]>(
+    subcategoryParam ? [subcategoryParam] : []
+  );
   const [activeSizes, setActiveSizes] = useState<string[]>([]);
-  const [maxPrice, setMaxPrice] = useState(500000);
+  const [minPrice, setMinPrice] = useState(dataMin);
+  const [maxPrice, setMaxPrice] = useState(dataMax);
   const [inStockOnly, setInStockOnly] = useState(false);
   const [filtersOpen, setFiltersOpen] = useState(false);
+
+  // Keep slider bounds in sync when product list changes.
+  useEffect(() => {
+    setMinPrice((v) => Math.max(dataMin, Math.min(v, dataMax)));
+    setMaxPrice((v) => Math.max(dataMin, Math.min(v || dataMax, dataMax)));
+  }, [dataMin, dataMax]);
 
   const toggle = (arr: string[], v: string, set: (x: string[]) => void) =>
     set(arr.includes(v) ? arr.filter((x) => x !== v) : [...arr, v]);
@@ -75,10 +96,16 @@ function ShopContent({ products }: { products: Product[] }) {
     if (activeCats.length) {
       list = list.filter((p) => activeCats.includes(p.category));
     }
+    if (activeSubs.length) {
+      list = list.filter((p) => activeSubs.includes(p.subcategory));
+    }
     if (activeSizes.length) {
       list = list.filter((p) => p.sizes.some((s) => activeSizes.includes(s)));
     }
-    list = list.filter((p) => finalPrice(p) <= maxPrice);
+    list = list.filter((p) => {
+      const fp = finalPrice(p);
+      return fp >= minPrice && fp <= maxPrice;
+    });
     if (inStockOnly) {
       list = list.filter((p) => p.totalStock > 0);
     }
@@ -96,7 +123,7 @@ function ShopContent({ products }: { products: Product[] }) {
         break;
       case "discount":
         sorted.sort((a, b) => b.discountPercent - a.discountPercent);
-        break;
+      products, q, activeBranch, genderParam, collectionParam, activeCats, activeSubs, activeSizes, minPrice
       case "rating":
         sorted.sort((a, b) => b.rating - a.rating);
         break;
@@ -165,17 +192,51 @@ function ShopContent({ products }: { products: Product[] }) {
           )}
         >
           <FilterGroup label="Ангилал">
-            {CATEGORIES.map((c) => (
-              <label key={c.slug} className="flex cursor-pointer items-center gap-2 py-1 text-sm">
-                <input
-                  type="checkbox"
-                  checked={activeCats.includes(c.name)}
-                  onChange={() => toggle(activeCats, c.name, setActiveCats)}
-                  className="accent-[var(--accent)]"
-                />
-                {c.nameMn}
-              </label>
-            ))}
+            {CATEGORIES.map((c) => {
+              const isActive = activeCats.includes(c.name);
+              // Subcategories actually present for this category in the data.
+              const subs = Array.from(
+                new Set(
+                  products
+                    .filter((p) => p.isActive && p.category === c.name && p.subcategory)
+                    .map((p) => p.subcategory)
+                )
+              ).sort();
+              return (
+                <div key={c.slug} className="py-1">
+                  <label className="flex cursor-pointer items-center gap-2 text-sm">
+                    <input
+                      type="checkbox"
+                      checked={isActive}
+                      onChange={() => {
+                        toggle(activeCats, c.name, setActiveCats);
+                        // Drop subcategory selections that no longer apply.
+                        if (isActive) {
+                          setActiveSubs((s) => s.filter((x) => !subs.includes(x)));
+                        }
+                      }}
+                      className="accent-[var(--accent)]"
+                    />
+                    {c.nameMn}
+                  </label>
+                  {isActive && subs.length > 0 && (
+                    <div className="ml-5 mt-1 space-y-1 border-l pl-3">
+                      {subs.map((sub) => (
+                        <label key={sub} className="flex cursor-pointer items-center gap-2 text-[13px]">
+                          <input
+                            type="checkbox"
+                            checked={activeSubs.includes(sub)}
+                            onChange={() => toggle(activeSubs, sub, setActiveSubs)}
+                            className="accent-[var(--accent)]"
+                          />
+                          {sub}
+                        </label>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              );
+            })}
           </FilterGroup>
 
           <FilterGroup label="Хэмжээ">
@@ -197,16 +258,44 @@ function ShopContent({ products }: { products: Product[] }) {
             </div>
           </FilterGroup>
 
-          <FilterGroup label={`Дээд үнэ: ₮${maxPrice.toLocaleString()}`}>
-            <input
-              type="range"
-              min={20000}
-              max={500000}
-              step={5000}
-              value={maxPrice}
-              onChange={(e) => setMaxPrice(Number(e.target.value))}
-              className="w-full accent-[var(--accent)]"
-            />
+          <FilterGroup label={`Үнэ: ₮${minPrice.toLocaleString()} – ₮${maxPrice.toLocaleString()}`}>
+            <div className="space-y-3">
+              <div>
+                <p className="mb-1 text-[11px] text-muted">Доод хязгаар</p>
+                <input
+                  type="range"
+                  min={dataMin}
+                  max={dataMax}
+                  step={1000}
+                  value={minPrice}
+                  onChange={(e) => {
+                    const v = Number(e.target.value);
+                    setMinPrice(Math.min(v, maxPrice));
+                  }}
+                  className="w-full accent-[var(--accent)]"
+                />
+              </div>
+              <div>
+                <p className="mb-1 text-[11px] text-muted">Дээд хязгаар</p>
+                <input
+                  type="range"
+                  min={dataMin}
+                  max={dataMax}
+                  step={1000}
+                  value={maxPrice}
+                  onChange={(e) => {
+                    const v = Number(e.target.value);
+                    setMubs([]);
+              setActiveSizes([]);
+              setMinPrice(dataMin);
+              setMaxPrice(dataMax
+                  className="w-full accent-[var(--accent)]"
+                />
+              </div>
+              <p className="text-[11px] text-muted">
+                Бүх барааны хүрээ: ₮{dataMin.toLocaleString()} – ₮{dataMax.toLocaleString()}
+              </p>
+            </div>
           </FilterGroup>
 
           <FilterGroup label="Бэлэн байдал">

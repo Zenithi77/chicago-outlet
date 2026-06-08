@@ -4,7 +4,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { BRAND } from "@/lib/brand";
-import { CATEGORIES } from "@/lib/data/categories";
+import { CATEGORIES, GENDERS } from "@/lib/data/categories";
 import { PRODUCTS } from "@/lib/data/products";
 import { useCart } from "@/lib/store/cart";
 import { classNames, finalPrice, formatMNT } from "@/lib/utils";
@@ -19,11 +19,11 @@ import {
   ChevronDown,
 } from "./Icons";
 
-const GENDER_LINKS = [
-  { label: "Эрэгтэй", value: "men", accent: false },
-  { label: "Эмэгтэй", value: "women", accent: false },
-  { label: "Юнисекс", value: "unisex", accent: false },
-  { label: "Хямдрал", value: "sale", accent: true },
+// Top-level navigation. The first 4 entries open a mega-menu driven by
+// CATEGORIES; the last "Хямдрал" link routes straight to the sale filter.
+const NAV_ITEMS: { slug: string; label: string; accent?: boolean }[] = [
+  ...CATEGORIES.map((c) => ({ slug: c.slug, label: c.nameMn })),
+  { slug: "sale", label: "Хямдрал", accent: true },
 ];
 
 const DEFAULT_ANNOUNCEMENTS = [
@@ -145,23 +145,23 @@ export function Header({ announcements }: { announcements?: string[] } = {}) {
               <MenuIcon />
             </button>
             <nav className="hidden items-center gap-8 font-elegant text-[17px] tracking-wide md:flex">
-              {GENDER_LINKS.map((g) => (
-                <div key={g.value} onMouseEnter={() => setHovered(g.value)} className="flex items-center">
+              {NAV_ITEMS.map((n) => (
+                <div key={n.slug} onMouseEnter={() => setHovered(n.slug)} className="flex items-center">
                   <Link
-                    href={`/shop?gender=${g.value}`}
+                    href={n.slug === "sale" ? "/shop?gender=sale" : `/shop?category=${encodeURIComponent(CATEGORIES.find((c) => c.slug === n.slug)?.name ?? n.label)}`}
                     className={classNames(
                       "group relative flex items-center gap-1 py-2 font-medium transition-colors",
-                      g.accent ? "italic text-danger" : "hover:text-accent-dark"
+                      n.accent ? "italic text-danger" : "hover:text-accent-dark"
                     )}
                   >
-                    {g.label}
-                    {!g.accent && (
+                    {n.label}
+                    {!n.accent && (
                       <ChevronDown className="opacity-50 transition-transform group-hover:rotate-180" />
                     )}
                     <span
                       className={classNames(
                         "absolute inset-x-0 -bottom-px h-px origin-left scale-x-0 bg-foreground transition-transform duration-300 group-hover:scale-x-100",
-                        hovered === g.value && "scale-x-100"
+                        hovered === n.slug && "scale-x-100"
                       )}
                     />
                   </Link>
@@ -229,33 +229,60 @@ export function Header({ announcements }: { announcements?: string[] } = {}) {
           className={classNames(
             "absolute inset-x-0 top-full hidden overflow-hidden border-b bg-surface shadow-lg transition-all duration-300 md:block",
             hovered && hovered !== "sale"
-              ? "max-h-96 opacity-100"
+              ? "max-h-[28rem] opacity-100"
               : "pointer-events-none max-h-0 opacity-0"
           )}
         >
-          <div className="container-page grid grid-cols-4 gap-8 py-8">
-            {CATEGORIES.slice(0, 4).map((c) => (
-              <div key={c.slug}>
-                <Link
-                  href={`/shop?category=${encodeURIComponent(c.name)}`}
-                  className="font-serif text-sm font-semibold hover:text-accent-dark"
-                >
-                  {c.nameMn}
-                </Link>
-                <ul className="mt-3 space-y-2">
-                  {c.children?.map((sub) => (
-                    <li key={sub.slug}>
-                      <Link
-                        href={`/shop?category=${encodeURIComponent(c.name)}`}
-                        className="text-[13px] text-muted transition-colors hover:text-foreground"
-                      >
-                        {sub.nameMn}
-                      </Link>
-                    </li>
+          <div className="container-page py-8">
+            {(() => {
+              const cat = CATEGORIES.find((c) => c.slug === hovered);
+              if (!cat) return null;
+
+              // "Хувцас" splits by gender (Эрэгтэй / Эмэгтэй / Хүүхэд).
+              if (cat.slug === "huvtsas") {
+                return (
+                  <div className="grid grid-cols-3 gap-8">
+                    {GENDERS.map((g) => (
+                      <div key={g.value}>
+                        <Link
+                          href={`/shop?category=${encodeURIComponent(cat.name)}&gender=${g.value}`}
+                          className="font-serif text-sm font-semibold hover:text-accent-dark"
+                        >
+                          {g.nameMn}
+                        </Link>
+                        <ul className="mt-3 space-y-2">
+                          {cat.children?.map((sub) => (
+                            <li key={sub.slug}>
+                              <Link
+                                href={`/shop?category=${encodeURIComponent(cat.name)}&gender=${g.value}&subcategory=${encodeURIComponent(sub.name)}`}
+                                className="text-[13px] text-muted transition-colors hover:text-foreground"
+                              >
+                                {sub.nameMn}
+                              </Link>
+                            </li>
+                          ))}
+                        </ul>
+                      </div>
+                    ))}
+                  </div>
+                );
+              }
+
+              // Other top-level categories: single grid of subcategories.
+              return (
+                <div className="grid grid-cols-4 gap-8">
+                  {cat.children?.map((sub) => (
+                    <Link
+                      key={sub.slug}
+                      href={`/shop?category=${encodeURIComponent(cat.name)}&subcategory=${encodeURIComponent(sub.name)}`}
+                      className="block rounded-lg p-3 text-sm font-medium transition hover:bg-background"
+                    >
+                      {sub.nameMn}
+                    </Link>
                   ))}
-                </ul>
-              </div>
-            ))}
+                </div>
+              );
+            })()}
           </div>
         </div>
       </div>
@@ -331,20 +358,24 @@ export function Header({ announcements }: { announcements?: string[] } = {}) {
                       Эрэлттэй хайлт
                     </p>
                     <div className="flex flex-wrap gap-2">
-                      {GENDER_LINKS.map((g) => (
+                      {NAV_ITEMS.map((n) => (
                         <button
-                          key={g.value}
+                          key={n.slug}
                           type="button"
                           onClick={() => {
-                            router.push(`/shop?gender=${g.value}`);
+                            router.push(
+                              n.slug === "sale"
+                                ? "/shop?gender=sale"
+                                : `/shop?category=${encodeURIComponent(CATEGORIES.find((c) => c.slug === n.slug)?.name ?? n.label)}`
+                            );
                             setSearchOpen(false);
                           }}
                           className={classNames(
                             "rounded-full border px-4 py-1.5 text-sm transition hover:border-foreground",
-                            g.accent ? "text-danger" : ""
+                            n.accent ? "text-danger" : ""
                           )}
                         >
-                          {g.label}
+                          {n.label}
                         </button>
                       ))}
                     </div>
@@ -466,42 +497,55 @@ export function Header({ announcements }: { announcements?: string[] } = {}) {
             </form>
           </div>
 
-          {/* Gender (elegant) */}
+          {/* Mobile: top-level categories */}
           <div className="px-5 pt-6">
             <p className="mb-3 text-[10px] font-semibold uppercase tracking-[0.3em] text-muted">Дэлгүүр</p>
             <div className="space-y-1">
-              {GENDER_LINKS.map((g) => (
+              {NAV_ITEMS.map((n) => (
                 <Link
-                  key={g.value}
-                  href={`/shop?gender=${g.value}`}
+                  key={n.slug}
+                  href={
+                    n.slug === "sale"
+                      ? "/shop?gender=sale"
+                      : `/shop?category=${encodeURIComponent(CATEGORIES.find((c) => c.slug === n.slug)?.name ?? n.label)}`
+                  }
                   onClick={() => setMenuOpen(false)}
                   className={classNames(
                     "group flex items-center justify-between rounded-xl px-3 py-3 font-elegant text-xl font-medium transition",
-                    g.accent
+                    n.accent
                       ? "italic text-danger hover:bg-danger/5"
                       : "hover:bg-background hover:text-accent-dark"
                   )}
                 >
-                  <span>{g.label}</span>
+                  <span>{n.label}</span>
                   <span className="text-muted transition group-hover:translate-x-1 group-hover:text-foreground">→</span>
                 </Link>
               ))}
             </div>
           </div>
 
-          {/* Categories */}
+          {/* Mobile: subcategories per top-level category */}
           <div className="px-5 pb-6 pt-6">
-            <p className="mb-3 text-[10px] font-semibold uppercase tracking-[0.3em] text-muted">Ангилал</p>
-            <div className="grid grid-cols-2 gap-2">
+            <p className="mb-3 text-[10px] font-semibold uppercase tracking-[0.3em] text-muted">Дэд ангилал</p>
+            <div className="space-y-4">
               {CATEGORIES.map((c) => (
-                <Link
-                  key={c.slug}
-                  href={`/shop?category=${encodeURIComponent(c.name)}`}
-                  onClick={() => setMenuOpen(false)}
-                  className="rounded-xl border border-black/5 bg-background px-3 py-2.5 text-[13px] font-medium text-foreground/80 transition hover:border-foreground hover:text-foreground"
-                >
-                  {c.nameMn}
-                </Link>
+                <div key={c.slug}>
+                  <p className="mb-1.5 text-[11px] font-semibold uppercase tracking-wider text-muted">
+                    {c.nameMn}
+                  </p>
+                  <div className="grid grid-cols-2 gap-2">
+                    {c.children?.map((sub) => (
+                      <Link
+                        key={sub.slug}
+                        href={`/shop?category=${encodeURIComponent(c.name)}&subcategory=${encodeURIComponent(sub.name)}`}
+                        onClick={() => setMenuOpen(false)}
+                        className="rounded-xl border border-black/5 bg-background px-3 py-2 text-[13px] font-medium text-foreground/80 transition hover:border-foreground hover:text-foreground"
+                      >
+                        {sub.nameMn}
+                      </Link>
+                    ))}
+                  </div>
+                </div>
               ))}
             </div>
           </div>
