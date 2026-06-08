@@ -1,7 +1,6 @@
 import { createClient } from "@/lib/supabase/server";
 import type { Product } from "@/lib/types";
-import { ShopClient } from "./ShopClient";
-import { PRODUCTS } from "@/lib/data/products";
+import ShopPage from "./ShopPage";
 
 export const dynamic = "force-dynamic";
 
@@ -14,9 +13,7 @@ async function fetchProducts(): Promise<Product[]> {
       .eq("is_active", true)
       .order("created_at", { ascending: false });
 
-    if (error || !data || data.length === 0) {
-      return PRODUCTS;
-    }
+    if (error || !data) return [];
 
     return data.map((row) => ({
       id: row.sku ?? row.id,
@@ -44,18 +41,18 @@ async function fetchProducts(): Promise<Product[]> {
       fit: row.fit ?? "regular",
       season: row.season ?? "all-season",
       collection: row.collection ?? "",
-      rating: Number(row.rating ?? 0),
+      rating: row.rating ?? 0,
       reviewCount: row.review_count ?? 0,
       totalStock: row.total_stock ?? 0,
       branch: row.branch ?? undefined,
       createdAt: row.created_at,
     }));
   } catch {
-    return PRODUCTS;
+    return [];
   }
 }
 
-export default async function ShopPage() {
+export default async function ShopServerPage() {
   const products = await fetchProducts();
-  return <ShopClient products={products} />;
+  return <ShopPage products={products} />;
 }
