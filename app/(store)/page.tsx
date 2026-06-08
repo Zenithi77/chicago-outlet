@@ -20,9 +20,9 @@ export default function HomePage() {
       <section className="container-page py-14">
         <div className="grid grid-cols-3 gap-3">
           {[
-            { label: "Park-Od Mall", href: "/shop?branch=park_od", seed: "cat-park-od", sub: "УБ, Сүхбаатар дүүрэг" },
-            { label: "Parko Riveria", href: "/shop?branch=riveria", seed: "cat-riveria", sub: "УБ, Чингэлтэй дүүрэг" },
-            { label: "Захиалга", href: "/shop?branch=online", seed: "cat-online", sub: "Хаана ч хүргэлттэй" },
+            { label: "Park-Od Mall", href: "/shop?branch=park_od", seed: "/branch-park-od.jpg", sub: "Ulaanbaatar, Bayanzurkh, 25 khoroo" },
+            { label: "Parko Riveria", href: "/shop?branch=riveria", seed: "/branch-riveria.jpg", sub: "Ulaanbaatar, Bayangol, 26 khoroo " },
+            { label: "Захиалга", href: "/shop?branch=online", seed: "/branch-online.jpg", sub: "Хаана ч хүргэлттэй" },
           ].map((c) => (
             <Link
               key={c.label}
