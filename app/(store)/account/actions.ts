@@ -92,7 +92,10 @@ export async function forgotPassword(
     options: { shouldCreateUser: false },
   });
 
-  if (error) return { error: "Код илгээхэд алдаа гарлаа. И-мэйл хаягаа шалгана уу." };
+  if (error) {
+    console.error("[forgotPassword] signInWithOtp error:", error);
+    return { error: `Код илгээхэд алдаа гарлаа: ${error.message}` };
+  }
 
   return { message: "ok:otp_sent" };
 }
