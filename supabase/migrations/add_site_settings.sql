@@ -16,9 +16,11 @@ on conflict (key) do nothing;
 -- Only admins / managers may write; anyone may read.
 alter table site_settings enable row level security;
 
+drop policy if exists "public read site_settings" on site_settings;
 create policy "public read site_settings"
   on site_settings for select using (true);
 
+drop policy if exists "staff write site_settings" on site_settings;
 create policy "staff write site_settings"
   on site_settings for all
   using (

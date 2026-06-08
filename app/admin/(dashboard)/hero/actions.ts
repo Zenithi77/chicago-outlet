@@ -25,12 +25,22 @@ export async function uploadHeroImage(
 
   const buffer = Buffer.from(await file.arrayBuffer());
   const dataUri = `data:${file.type};base64,${buffer.toString("base64")}`;
-  const url = await uploadToCloudinary(dataUri);
 
-  const db = createAdminClient();
-  await db
-    .from("site_settings")
-    .upsert({ key, value: url, updated_at: new Date().toISOString() });
+  let url: string;
+  try {
+    url = await uploadToCloudinary(dataUri);
+  } catch (e) {
+    return { error: "Cloudinary upload амжилтгүй болсон: " + (e instanceof Error ? e.message : String(e)) };
+  }
+
+  try {
+    const db = createAdminClient();
+    await db
+      .from("site_settings")
+      .upsert({ key, value: url, updated_at: new Date().toISOString() });
+  } catch {
+    return { error: "Мэдээлэл хадгалахад алдаа гарлаа. site_settings хүснэгт үүссэн эсэхийг шалгана уу." };
+  }
 
   revalidatePath("/");
   revalidatePath("/admin/hero");
@@ -47,10 +57,14 @@ export async function saveHeroUrl(
 
   if (url !== "" && !/^https?:\/\//i.test(url)) return { error: "Зөв URL оруулна уу." };
 
-  const db = createAdminClient();
-  await db
-    .from("site_settings")
-    .upsert({ key, value: url, updated_at: new Date().toISOString() });
+  try {
+    const db = createAdminClient();
+    await db
+      .from("site_settings")
+      .upsert({ key, value: url, updated_at: new Date().toISOString() });
+  } catch {
+    return { error: "Мэдээлэл хадгалахад алдаа гарлаа. site_settings хүснэгт үүссэн эсэхийг шалгана уу." };
+  }
 
   revalidatePath("/");
   revalidatePath("/admin/hero");
