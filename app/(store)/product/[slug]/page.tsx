@@ -49,6 +49,8 @@ async function fetchProductBySlug(slug: string): Promise<Product | null> {
       reviewCount: data.review_count ?? 0,
       totalStock: data.total_stock ?? 0,
       branch: data.branch ?? undefined,
+      branchStock: data.branch_stock ?? {},
+      isOnline: data.is_online ?? false,
       createdAt: data.created_at,
     };
   } catch {

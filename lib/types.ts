@@ -47,6 +47,8 @@ export interface Product {
   reviewCount: number;
   totalStock: number;
   branch?: Branch;  // which store location carries this product
+  branchStock?: Record<string, number>; // per-branch stock map
+  isOnline?: boolean; // available for online order
   createdAt: string;
 }
 

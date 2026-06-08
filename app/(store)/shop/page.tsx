@@ -48,6 +48,8 @@ async function fetchProducts(): Promise<Product[]> {
       reviewCount: row.review_count ?? 0,
       totalStock: row.total_stock ?? 0,
       branch: row.branch ?? undefined,
+      branchStock: row.branch_stock ?? {},
+      isOnline: row.is_online ?? false,
       createdAt: row.created_at,
     }));
   } catch {

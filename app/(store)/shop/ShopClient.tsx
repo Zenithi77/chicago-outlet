@@ -53,7 +53,16 @@ function ShopContent({ products }: { products: Product[] }) {
       );
     }
     if (activeBranch) {
-      list = list.filter((p) => p.branch === activeBranch);
+      if (activeBranch === "online") {
+        list = list.filter((p) => p.isOnline || p.branch === "online");
+      } else {
+        list = list.filter((p) => {
+          if (p.branchStock && Object.keys(p.branchStock).length > 0) {
+            return (p.branchStock[activeBranch] ?? 0) > 0 || activeBranch in p.branchStock;
+          }
+          return p.branch === activeBranch;
+        });
+      }
     }
     if (genderParam === "sale") {
       list = list.filter((p) => p.isOnSale);
