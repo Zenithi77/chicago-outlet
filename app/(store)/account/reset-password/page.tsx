@@ -34,8 +34,12 @@ export default function ResetPasswordPage() {
         </div>
 
         {state?.message ? (
-          <div className="space-y-4">
-            <Alert state={state} />
+          <div className="space-y-5">
+            <div className="flex flex-col items-center gap-3 rounded-2xl bg-accent/10 px-6 py-8 text-center">
+              <span className="flex h-14 w-14 items-center justify-center rounded-full bg-accent text-foreground text-2xl">✓</span>
+              <p className="font-serif text-lg font-bold">Амжилттай!</p>
+              <p className="text-sm text-muted">Таны нууц үг амжилттай шинэчлэгдлээ.</p>
+            </div>
             <a
               href="/account"
               className="block w-full rounded-xl bg-foreground py-3.5 text-center text-sm font-semibold text-white hover:bg-accent hover:text-foreground"

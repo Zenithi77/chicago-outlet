@@ -141,14 +141,14 @@ export function Header() {
             >
               <MenuIcon />
             </button>
-            <nav className="hidden items-center gap-7 text-[13px] font-medium tracking-wide md:flex">
+            <nav className="hidden items-center gap-8 font-elegant text-[17px] tracking-wide md:flex">
               {GENDER_LINKS.map((g) => (
                 <div key={g.value} onMouseEnter={() => setHovered(g.value)} className="flex items-center">
                   <Link
                     href={`/shop?gender=${g.value}`}
                     className={classNames(
-                      "group relative flex items-center gap-1 py-2 transition-colors",
-                      g.accent ? "text-danger" : "hover:text-accent-dark"
+                      "group relative flex items-center gap-1 py-2 font-medium transition-colors",
+                      g.accent ? "italic text-danger" : "hover:text-accent-dark"
                     )}
                   >
                     {g.label}
@@ -423,54 +423,104 @@ export function Header() {
       />
       <aside
         className={classNames(
-          "fixed left-0 top-0 z-50 flex h-full w-80 max-w-[85%] flex-col bg-surface shadow-xl transition-transform duration-300 md:hidden",
+          "fixed left-0 top-0 z-50 flex h-full w-[88%] max-w-sm flex-col bg-surface shadow-2xl transition-transform duration-300 md:hidden",
           menuOpen ? "translate-x-0" : "-translate-x-full"
         )}
       >
-        <div className="flex items-center justify-between border-b px-5 py-4">
-          <span className="font-serif text-lg font-bold tracking-wide">CHICAGO OUTLET</span>
-          <button onClick={() => setMenuOpen(false)} aria-label="Хаах">
-            <CloseIcon />
-          </button>
+        {/* Header */}
+        <div className="relative overflow-hidden bg-foreground px-6 pb-6 pt-6 text-white">
+          <div className="pointer-events-none absolute -right-10 -top-10 h-32 w-32 rounded-full bg-accent/30 blur-2xl" />
+          <div className="pointer-events-none absolute -bottom-12 -left-8 h-32 w-32 rounded-full bg-white/5 blur-2xl" />
+          <div className="relative flex items-start justify-between">
+            <div>
+              <p className="font-serif text-xl font-bold tracking-[0.14em]">CHICAGO</p>
+              <p className="-mt-1 text-[10px] font-medium uppercase tracking-[0.42em] text-accent">Outlet</p>
+            </div>
+            <button
+              onClick={() => setMenuOpen(false)}
+              aria-label="Хаах"
+              className="rounded-full p-1.5 text-white/80 transition hover:bg-white/10 hover:text-white"
+            >
+              <CloseIcon />
+            </button>
+          </div>
         </div>
-        <div className="flex-1 overflow-y-auto px-5 py-4">
-          <form
-            onSubmit={search}
-            className="mb-5 flex items-center gap-2 rounded-full border bg-background px-4 py-2.5"
-          >
-            <SearchIcon className="text-muted" />
-            <input
-              value={query}
-              onChange={(e) => setQuery(e.target.value)}
-              placeholder="Хайх..."
-              className="w-full bg-transparent text-sm outline-none"
-            />
-          </form>
-          <p className="mb-2 text-[11px] font-semibold uppercase tracking-wider text-muted">Дэлгүүр</p>
-          {GENDER_LINKS.map((g) => (
-            <Link
-              key={g.value}
-              href={`/shop?gender=${g.value}`}
-              onClick={() => setMenuOpen(false)}
-              className={classNames(
-                "block border-b py-3 text-[15px] font-medium",
-                g.accent && "text-danger"
-              )}
+
+        <div className="flex-1 overflow-y-auto">
+          {/* Search */}
+          <div className="px-5 pt-5">
+            <form
+              onSubmit={search}
+              className="flex items-center gap-2 rounded-full border bg-background px-4 py-2.5 transition focus-within:border-foreground focus-within:shadow-sm"
             >
-              {g.label}
-            </Link>
-          ))}
-          <p className="mb-2 mt-5 text-[11px] font-semibold uppercase tracking-wider text-muted">Ангилал</p>
-          {CATEGORIES.map((c) => (
+              <SearchIcon className="text-muted" />
+              <input
+                value={query}
+                onChange={(e) => setQuery(e.target.value)}
+                placeholder="Бараа, брэнд хайх..."
+                className="w-full bg-transparent text-sm outline-none"
+              />
+            </form>
+          </div>
+
+          {/* Gender (elegant) */}
+          <div className="px-5 pt-6">
+            <p className="mb-3 text-[10px] font-semibold uppercase tracking-[0.3em] text-muted">Дэлгүүр</p>
+            <div className="space-y-1">
+              {GENDER_LINKS.map((g) => (
+                <Link
+                  key={g.value}
+                  href={`/shop?gender=${g.value}`}
+                  onClick={() => setMenuOpen(false)}
+                  className={classNames(
+                    "group flex items-center justify-between rounded-xl px-3 py-3 font-elegant text-xl font-medium transition",
+                    g.accent
+                      ? "italic text-danger hover:bg-danger/5"
+                      : "hover:bg-background hover:text-accent-dark"
+                  )}
+                >
+                  <span>{g.label}</span>
+                  <span className="text-muted transition group-hover:translate-x-1 group-hover:text-foreground">→</span>
+                </Link>
+              ))}
+            </div>
+          </div>
+
+          {/* Categories */}
+          <div className="px-5 pb-6 pt-6">
+            <p className="mb-3 text-[10px] font-semibold uppercase tracking-[0.3em] text-muted">Ангилал</p>
+            <div className="grid grid-cols-2 gap-2">
+              {CATEGORIES.map((c) => (
+                <Link
+                  key={c.slug}
+                  href={`/shop?category=${encodeURIComponent(c.name)}`}
+                  onClick={() => setMenuOpen(false)}
+                  className="rounded-xl border border-black/5 bg-background px-3 py-2.5 text-[13px] font-medium text-foreground/80 transition hover:border-foreground hover:text-foreground"
+                >
+                  {c.nameMn}
+                </Link>
+              ))}
+            </div>
+          </div>
+        </div>
+
+        {/* Footer actions */}
+        <div className="border-t bg-background/60 px-5 py-4">
+          <div className="grid grid-cols-2 gap-2">
             <Link
-              key={c.slug}
-              href={`/shop?category=${encodeURIComponent(c.name)}`}
+              href="/account"
               onClick={() => setMenuOpen(false)}
-              className="block py-2.5 text-sm text-muted"
+              className="flex items-center justify-center gap-2 rounded-xl bg-foreground py-3 text-sm font-semibold text-white transition hover:bg-accent hover:text-foreground"
             >
-              {c.nameMn}
+              <UserIcon /> Бүртгэл
             </Link>
-          ))}
+            <button
+              onClick={() => { setOpen(true); setMenuOpen(false); }}
+              className="flex items-center justify-center gap-2 rounded-xl border border-foreground/15 bg-surface py-3 text-sm font-semibold transition hover:border-foreground"
+            >
+              <BagIcon /> Сагс {mounted && count > 0 ? `(${count})` : ""}
+            </button>
+          </div>
         </div>
       </aside>
     </header>
