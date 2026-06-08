@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useActionState, useState } from "react";
-import { login, signup, forgotPassword, type AuthState } from "./actions";
+import { login, signup, forgotPassword, verifyOtp, resetPassword, type AuthState } from "./actions";
 import { classNames } from "@/lib/utils";
 import { CheckIcon, ArrowLeftIcon } from "@/components/Icons";
 
@@ -187,27 +187,76 @@ function LoginPanel({ next, onForgot }: { next: string; onForgot: () => void }) 
 }
 
 function ForgotPanel({ onDone }: { onDone: () => void }) {
-  const [state, action, pending] = useActionState<AuthState, FormData>(
-    forgotPassword,
-    undefined
-  );
+  const [email, setEmail] = useState("");
+  const [step, setStep] = useState<"email" | "otp" | "password">("email");
+
+  // Step 1: send OTP
+  const [sendState, sendAction, sendPending] = useActionState<AuthState, FormData>(forgotPassword, undefined);
+  // Step 2: verify OTP
+  const [otpState, otpAction, otpPending] = useActionState<AuthState, FormData>(verifyOtp, undefined);
+  // Step 3: set new password
+  const [pwState, pwAction, pwPending] = useActionState<AuthState, FormData>(resetPassword, undefined);
+
+  // Advance steps based on action results
+  if (sendState?.message === "ok:otp_sent" && step === "email") setStep("otp");
+  if (otpState?.message === "ok:verified" && step === "otp") setStep("password");
+
   return (
-    <form action={action} className="space-y-4">
-      <Field label="И-мэйл" name="email" type="email" autoComplete="email" placeholder="та@example.mn" required />
-      <Alert state={state} />
-      {state?.message ? (
-        <button type="button" onClick={onDone} className="w-full rounded-xl bg-foreground py-3.5 text-sm font-semibold text-white hover:bg-accent hover:text-foreground">
-          Нэвтрэх рүү очих
-        </button>
-      ) : (
-        <button
-          disabled={pending}
-          className="w-full rounded-xl bg-foreground py-3.5 text-sm font-semibold text-white transition hover:bg-accent hover:text-foreground disabled:opacity-60"
-        >
-          {pending ? "Илгээж байна…" : "Холбоос илгээх"}
-        </button>
+    <div className="space-y-4">
+      {/* Step 1: Email */}
+      {step === "email" && (
+        <form action={(fd) => { setEmail(String(fd.get("email") ?? "")); sendAction(fd); }} className="space-y-4">
+          <div>
+            <p className="font-semibold text-sm">И-мэйл хаягаа оруулна уу</p>
+            <p className="text-xs text-muted mt-0.5">Gmail рүү 6 оронтой код илгээнэ.</p>
+          </div>
+          <Field label="И-мэйл" name="email" type="email" autoComplete="email" placeholder="та@example.mn" required />
+          {sendState?.error && <p className="text-xs text-red-500">{sendState.error}</p>}
+          <button disabled={sendPending} className="w-full rounded-xl bg-foreground py-3.5 text-sm font-semibold text-white transition hover:bg-accent hover:text-foreground disabled:opacity-60">
+            {sendPending ? "Илгээж байна…" : "Код авах"}
+          </button>
+        </form>
       )}
-    </form>
+
+      {/* Step 2: OTP code */}
+      {step === "otp" && (
+        <form action={otpAction} className="space-y-4">
+          <div>
+            <p className="font-semibold text-sm">Кодоо оруулна уу</p>
+            <p className="text-xs text-muted mt-0.5"><span className="font-medium">{email}</span> хаяг руу 6 оронтой код илгээгдлээ.</p>
+          </div>
+          <input type="hidden" name="email" value={email} />
+          <Field label="6 оронтой код" name="token" type="text" inputMode="numeric" maxLength={6} placeholder="123456" required />
+          {otpState?.error && <p className="text-xs text-red-500">{otpState.error}</p>}
+          <button disabled={otpPending} className="w-full rounded-xl bg-foreground py-3.5 text-sm font-semibold text-white transition hover:bg-accent hover:text-foreground disabled:opacity-60">
+            {otpPending ? "Шалгаж байна…" : "Баталгаажуулах"}
+          </button>
+          <button type="button" onClick={() => setStep("email")} className="w-full text-xs text-muted underline">
+            Код дахин авах
+          </button>
+        </form>
+      )}
+
+      {/* Step 3: New password */}
+      {step === "password" && (
+        <form action={pwAction} className="space-y-4">
+          <div>
+            <p className="font-semibold text-sm">Шинэ нууц үг оруулна уу</p>
+          </div>
+          <Field label="Шинэ нууц үг" name="password" type="password" autoComplete="new-password" placeholder="Дор хаяж 8 тэмдэгт" minLength={8} required />
+          {pwState?.error && <p className="text-xs text-red-500">{pwState.error}</p>}
+          {pwState?.message === "ok:done" ? (
+            <button type="button" onClick={onDone} className="w-full rounded-xl bg-foreground py-3.5 text-sm font-semibold text-white hover:bg-accent hover:text-foreground">
+              ✓ Амжилттай — Нэвтрэх
+            </button>
+          ) : (
+            <button disabled={pwPending} className="w-full rounded-xl bg-foreground py-3.5 text-sm font-semibold text-white transition hover:bg-accent hover:text-foreground disabled:opacity-60">
+              {pwPending ? "Хадгалж байна…" : "Нууц үг шинэчлэх"}
+            </button>
+          )}
+        </form>
+      )}
+    </div>
   );
 }
 

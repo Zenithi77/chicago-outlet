@@ -78,7 +78,7 @@ export async function logout() {
   redirect("/account");
 }
 
-// Send password reset email
+// Send OTP code to email for password reset
 export async function forgotPassword(
   _prev: AuthState,
   formData: FormData
@@ -87,16 +87,35 @@ export async function forgotPassword(
   if (!email) return { error: "И-мэйл хаягаа оруулна уу." };
 
   const supabase = await createClient();
-  const { error } = await supabase.auth.resetPasswordForEmail(email, {
-    redirectTo: `${process.env.NEXT_PUBLIC_SITE_URL ?? "https://www.chicagooutlet.mn"}/account/reset-password`,
+  const { error } = await supabase.auth.signInWithOtp({
+    email,
+    options: { shouldCreateUser: false },
   });
 
-  if (error) return { error: "И-мэйл илгээхэд алдаа гарлаа. Дахин оролдоно уу." };
+  if (error) return { error: "Код илгээхэд алдаа гарлаа. И-мэйл хаягаа шалгана уу." };
 
-  return { message: "Нууц үг шинэчлэх холбоос и-мэйлд таны хаяг руу илгээгдлээ." };
+  return { message: "ok:otp_sent" };
 }
 
-// Set new password (called from /account/reset-password page)
+// Verify OTP code
+export async function verifyOtp(
+  _prev: AuthState,
+  formData: FormData
+): Promise<AuthState> {
+  const email = String(formData.get("email") ?? "").trim();
+  const token = String(formData.get("token") ?? "").trim();
+
+  if (!token) return { error: "Кодоо оруулна уу." };
+
+  const supabase = await createClient();
+  const { error } = await supabase.auth.verifyOtp({ email, token, type: "email" });
+
+  if (error) return { error: "Код буруу байна эсвэл хугацаа дууссан. Дахин оролдоно уу." };
+
+  return { message: "ok:verified" };
+}
+
+// Set new password after OTP verification (user is now signed in)
 export async function resetPassword(
   _prev: AuthState,
   formData: FormData
@@ -107,7 +126,7 @@ export async function resetPassword(
   const supabase = await createClient();
   const { error } = await supabase.auth.updateUser({ password });
 
-  if (error) return { error: "Нууц үг шинэчлэхэд алдаа гарлаа. Холбоос хугацаа дууссан байж магадгүй." };
+  if (error) return { error: "Нууц үг шинэчлэхэд алдаа гарлаа. Дахин оролдоно уу." };
 
-  return { message: "Нууц үг амжилттай шинэчлэгдлээ! Одоо нэвтэрч болно." };
+  return { message: "ok:done" };
 }
