@@ -94,6 +94,13 @@ export async function forgotPassword(
 
   if (error) {
     console.error("[forgotPassword] signInWithOtp error:", error);
+    const msg = error.message?.toLowerCase() ?? "";
+    if (msg.includes("signups not allowed")) {
+      return { error: "Энэ имэйлээр бүртгэл олдсонгүй." };
+    }
+    if (msg.includes("rate limit")) {
+      return { error: "Хэт олон удаа оролдлоо. Хэсэг хүлээгээд дахин оролдоно уу." };
+    }
     return { error: `Код илгээхэд алдаа гарлаа: ${error.message}` };
   }
 
