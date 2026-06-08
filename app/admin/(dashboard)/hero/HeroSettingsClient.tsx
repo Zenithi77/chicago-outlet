@@ -1,7 +1,7 @@
 "use client";
 
 import { useRef, useState, useTransition } from "react";
-import { uploadHeroImage, saveHeroUrl, type HeroKey } from "./actions";
+import { saveHeroUrl, type HeroKey } from "./actions";
 import { UploadIcon, CloseIcon } from "@/components/Icons";
 import { classNames } from "@/lib/utils";
 
@@ -32,12 +32,22 @@ function HeroSlot({
   };
 
   const handleFile = (file: File) => {
-    const fd = new FormData();
-    fd.append("file", file);
     startTransition(async () => {
-      const res = await uploadHeroImage(slot.key, fd);
-      if (res.error) return notify(false, res.error);
-      setUrl(res.url!);
+      // Upload via the existing /api/upload route (handles Cloudinary)
+      const fd = new FormData();
+      fd.append("files", file);
+      const res = await fetch("/api/upload", { method: "POST", body: fd });
+      if (!res.ok) {
+        const data = await res.json().catch(() => ({}));
+        return notify(false, data.error ?? "Upload амжилтгүй болсон.");
+      }
+      const { urls } = await res.json();
+      const uploadedUrl: string = urls?.[0];
+      if (!uploadedUrl) return notify(false, "URL хүлээж авсангүй.");
+
+      const saveRes = await saveHeroUrl(slot.key, uploadedUrl);
+      if (saveRes.error) return notify(false, saveRes.error);
+      setUrl(uploadedUrl);
       notify(true);
     });
   };
