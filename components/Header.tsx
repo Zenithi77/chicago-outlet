@@ -504,24 +504,7 @@ export function Header() {
           </div>
         </div>
 
-        {/* Footer actions */}
-        <div className="border-t bg-background/60 px-5 py-4">
-          <div className="grid grid-cols-2 gap-2">
-            <Link
-              href="/account"
-              onClick={() => setMenuOpen(false)}
-              className="flex items-center justify-center gap-2 rounded-xl bg-foreground py-3 text-sm font-semibold text-white transition hover:bg-accent hover:text-foreground"
-            >
-              <UserIcon /> Бүртгэл
-            </Link>
-            <button
-              onClick={() => { setOpen(true); setMenuOpen(false); }}
-              className="flex items-center justify-center gap-2 rounded-xl border border-foreground/15 bg-surface py-3 text-sm font-semibold transition hover:border-foreground"
-            >
-              <BagIcon /> Сагс {mounted && count > 0 ? `(${count})` : ""}
-            </button>
-          </div>
-        </div>
+        {/* Footer actions removed: account & cart already in main header */}
       </aside>
     </header>
   );
