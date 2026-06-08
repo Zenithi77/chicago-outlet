@@ -285,10 +285,8 @@ function ShopContent({ products }: { products: Product[] }) {
                   value={maxPrice}
                   onChange={(e) => {
                     const v = Number(e.target.value);
-                    setMubs([]);
-              setActiveSizes([]);
-              setMinPrice(dataMin);
-              setMaxPrice(dataMax
+                    setMaxPrice(Math.max(v, minPrice));
+                  }}
                   className="w-full accent-[var(--accent)]"
                 />
               </div>
@@ -313,8 +311,10 @@ function ShopContent({ products }: { products: Product[] }) {
           <button
             onClick={() => {
               setActiveCats([]);
+              setActiveSubs([]);
               setActiveSizes([]);
-              setMaxPrice(500000);
+              setMinPrice(dataMin);
+              setMaxPrice(dataMax);
               setInStockOnly(false);
             }}
             className="text-sm text-accent-dark underline"
