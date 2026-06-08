@@ -123,13 +123,13 @@ function ShopContent({ products }: { products: Product[] }) {
         break;
       case "discount":
         sorted.sort((a, b) => b.discountPercent - a.discountPercent);
-      products, q, activeBranch, genderParam, collectionParam, activeCats, activeSubs, activeSizes, minPrice
+        break;
       case "rating":
         sorted.sort((a, b) => b.rating - a.rating);
         break;
     }
     return sorted;
-  }, [q, activeBranch, genderParam, collectionParam, activeCats, activeSizes, maxPrice, inStockOnly, sort]);
+  }, [products, q, activeBranch, genderParam, collectionParam, activeCats, activeSubs, activeSizes, minPrice, maxPrice, inStockOnly, sort]);
 
   const branchLabel =
     activeBranch === "park_od"
