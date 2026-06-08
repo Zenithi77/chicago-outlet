@@ -122,7 +122,7 @@ export async function verifyOtp(
 
   if (error) return { error: "Код буруу байна эсвэл хугацаа дууссан. Дахин оролдоно уу." };
 
-  return { message: "ok:verified" };
+  redirect("/account/reset-password");
 }
 
 // Set new password after OTP verification (user is now signed in)
