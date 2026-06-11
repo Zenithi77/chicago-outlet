@@ -70,7 +70,6 @@ export async function POST(request: Request) {
   const { error: insertErr } = await admin.from("orders").upsert(
     {
       id: orderId,
-      customer_id: userId,
       customer_name: body.customer.name,
       customer_email: body.customer.email,
       customer_phone: body.customer.phone,
