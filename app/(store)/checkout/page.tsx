@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useEffect, useState } from "react";
 import { useCart } from "@/lib/store/cart";
 import { formatMNT, classNames, isValidMnPhone, isValidEmail, generateOrderId } from "@/lib/utils";
+import { BRAND } from "@/lib/brand";
 import { CheckIcon, ArrowLeftIcon } from "@/components/Icons";
 import type { PaymentMethod } from "@/lib/types";
 
