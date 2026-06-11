@@ -86,7 +86,7 @@ export type QpayInvoiceResponse = {
   qr_text: string;
   qr_image: string; // base64 PNG (no data: prefix in some versions)
   qPay_shortUrl?: string;
-  urls?: { name: string; description?: string; link: string }[];
+  urls?: { name: string; description?: string; link: string; logo?: string }[];
 };
 
 /**

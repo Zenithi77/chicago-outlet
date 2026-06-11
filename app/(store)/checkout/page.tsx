@@ -13,7 +13,7 @@ type QpayInvoice = {
   qr_text: string;
   qr_image: string;
   qPay_shortUrl?: string;
-  urls?: { name: string; description?: string; link: string }[];
+  urls?: { name: string; description?: string; link: string; logo?: string }[];
 };
 
 const STEPS = ["Хүргэлт", "Шалгах", "Төлбөр", "Баталгаажуулалт"];
@@ -264,18 +264,28 @@ export default function CheckoutPage() {
                     </a>
                   )}
                   {qpayInvoice.urls && qpayInvoice.urls.length > 0 && (
-                    <div className="mt-3 flex flex-wrap justify-center gap-2">
-                      {qpayInvoice.urls.map((u) => (
-                        <a
-                          key={u.link}
-                          href={u.link}
-                          target="_blank"
-                          rel="noreferrer"
-                          className="rounded-full border px-3 py-1 text-[11px] font-medium hover:bg-foreground hover:text-white"
-                        >
-                          {u.name}
-                        </a>
-                      ))}
+                    <div className="mt-4">
+                      <p className="mb-2 text-xs text-muted">Банкны аппликейшнээр нэвтрэх</p>
+                      <div className="flex flex-wrap justify-center gap-3">
+                        {qpayInvoice.urls.map((u) => (
+                          <a
+                            key={u.link}
+                            href={u.link}
+                            target="_blank"
+                            rel="noreferrer"
+                            className="flex flex-col items-center gap-1 rounded-xl border bg-white p-2 transition hover:shadow-md"
+                            style={{ minWidth: 72 }}
+                          >
+                            {u.logo ? (
+                              // eslint-disable-next-line @next/next/no-img-element
+                              <img src={u.logo} alt={u.name} className="h-10 w-10 rounded-lg object-contain" />
+                            ) : (
+                              <span className="flex h-10 w-10 items-center justify-center rounded-lg bg-gray-100 text-[10px] font-bold text-gray-500">{u.name.slice(0, 2)}</span>
+                            )}
+                            <span className="text-[10px] font-medium text-gray-700">{u.name}</span>
+                          </a>
+                        ))}
+                      </div>
                     </div>
                   )}
                   <p className="mt-4 text-xs text-muted">
