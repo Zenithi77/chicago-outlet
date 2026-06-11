@@ -70,7 +70,7 @@ export function ProductCard({ product }: { product: Product }) {
         </p>
         <Link
           href={`/product/${product.slug}`}
-          className="mt-0.5 text-sm font-medium hover:text-accent-dark"
+          className="mt-0.5 line-clamp-2 min-h-[2.5rem] text-sm font-medium leading-tight hover:text-accent-dark"
         >
           {product.name}
         </Link>
@@ -106,8 +106,8 @@ export function ProductCard({ product }: { product: Product }) {
           )}
         </div>
 
-        {/* Color swatches */}
-        <div className="mt-2 flex items-center gap-1.5">
+        {/* Color swatches — fixed row to keep cards aligned */}
+        <div className="mt-2 flex min-h-[1rem] items-center gap-1.5">
           {product.colors.slice(0, 5).map((c, i) => (
             <button
               key={c.name}
@@ -129,11 +129,12 @@ export function ProductCard({ product }: { product: Product }) {
           onClick={quickAdd}
           disabled={soldOut}
           className={classNames(
-            "mt-3 w-full rounded-md py-2 text-xs font-semibold uppercase tracking-wider transition",
+            "mt-auto w-full rounded-md py-2 text-xs font-semibold uppercase tracking-wider transition",
             soldOut
               ? "cursor-not-allowed bg-border text-muted"
               : "bg-foreground text-white hover:bg-accent hover:text-foreground"
           )}
+          style={{ marginTop: "0.75rem" }}
         >
           {soldOut ? "Дууссан" : "Сагсанд нэмэх"}
         </button>

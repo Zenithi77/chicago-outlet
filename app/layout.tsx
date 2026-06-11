@@ -1,6 +1,8 @@
 import type { Metadata, Viewport } from "next";
 import { Playfair_Display, DM_Sans, Cormorant_Garamond } from "next/font/google";
+import { Suspense } from "react";
 import "./globals.css";
+import { NavigationProgress } from "@/components/NavigationProgress";
 
 const playfair = Playfair_Display({
   variable: "--font-playfair",
@@ -43,7 +45,12 @@ export default function RootLayout({
       lang="mn"
       className={`${playfair.variable} ${dmSans.variable} ${cormorant.variable} h-full antialiased`}
     >
-      <body className="min-h-full flex flex-col">{children}</body>
+      <body className="min-h-full flex flex-col">
+        <Suspense fallback={null}>
+          <NavigationProgress />
+        </Suspense>
+        {children}
+      </body>
     </html>
   );
 }
