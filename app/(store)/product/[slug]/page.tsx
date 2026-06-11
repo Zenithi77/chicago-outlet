@@ -19,7 +19,7 @@ function mapRow(data: Record<string, unknown>): Product {
     description: (data.description as string) ?? "",
     shortDescription: (data.short_description as string) ?? "",
     price: data.price as number,
-    currency: (data.currency as string) ?? "MNT",
+    currency: ((data.currency as string) ?? "MNT") as import("@/lib/types").Currency,
     discountPercent: Number(data.discount_percent ?? 0),
     images: (data.images as string[]) ?? [],
     sizes: (data.sizes as string[]) ?? [],
