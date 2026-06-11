@@ -24,11 +24,15 @@ export function ProductDetail({ product }: { product: Product }) {
 
   const fp = finalPrice(product);
   const save = savings(product);
-  const color = product.colors[colorIdx];
+  const hasColors = product.colors.length > 0;
+  const hasSizes = product.sizes.length > 0;
+  const color = hasColors
+    ? product.colors[colorIdx] ?? product.colors[0]
+    : { name: "", hex: "#000000" };
   const soldOut = product.totalStock <= 0;
 
   const add = (buyNow = false) => {
-    if (!size) {
+    if (hasSizes && !size) {
       setError("Хэмжээгээ сонгоно уу.");
       return;
     }
@@ -38,7 +42,7 @@ export function ProductDetail({ product }: { product: Product }) {
       slug: product.slug,
       name: product.name,
       sku: product.id,
-      size,
+      size: size ?? "",
       color: color.name,
       colorHex: color.hex,
       qty,
@@ -122,6 +126,7 @@ export function ProductDetail({ product }: { product: Product }) {
           </div>
 
           {/* Colors */}
+          {hasColors && (
           <div className="mt-6">
             <p className="mb-2 text-sm font-medium">
               Өнгө: <span className="text-muted">{color.name}</span>
@@ -142,8 +147,10 @@ export function ProductDetail({ product }: { product: Product }) {
               ))}
             </div>
           </div>
+          )}
 
           {/* Sizes */}
+          {hasSizes && (
           <div className="mt-6">
             <div className="mb-2 flex items-center justify-between">
               <p className="text-sm font-medium">Хэмжээ</p>
@@ -169,6 +176,7 @@ export function ProductDetail({ product }: { product: Product }) {
             </div>
             {error && <p className="mt-2 text-sm text-danger">{error}</p>}
           </div>
+          )}
 
           {/* Stock */}
           <p className="mt-4 text-sm">

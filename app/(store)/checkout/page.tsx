@@ -1,12 +1,20 @@
 "use client";
 
 import Link from "next/link";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useCart } from "@/lib/store/cart";
 import { formatMNT, classNames, isValidMnPhone, isValidEmail, generateOrderId } from "@/lib/utils";
 import { BRAND } from "@/lib/brand";
 import { CheckIcon, ArrowLeftIcon } from "@/components/Icons";
 import type { PaymentMethod } from "@/lib/types";
+
+type QpayInvoice = {
+  invoice_id: string;
+  qr_text: string;
+  qr_image: string;
+  qPay_shortUrl?: string;
+  urls?: { name: string; description?: string; link: string }[];
+};
 
 const STEPS = ["Хүргэлт", "Шалгах", "Төлбөр", "Баталгаажуулалт"];
 
@@ -27,6 +35,10 @@ export default function CheckoutPage() {
     city: "Улаанбаатар",
   });
   const [errors, setErrors] = useState<Record<string, string>>({});
+  const [qpayInvoice, setQpayInvoice] = useState<QpayInvoice | null>(null);
+  const [qpayLoading, setQpayLoading] = useState(false);
+  const [qpayError, setQpayError] = useState<string | null>(null);
+  const [qpayChecking, setQpayChecking] = useState(false);
 
   const codFee = payment === "cash_on_delivery" ? BRAND.codFee : 0;
   const shippingFee = shippingMethod === "express" ? BRAND.expressFee : 0;
@@ -45,15 +57,97 @@ export default function CheckoutPage() {
     return Object.keys(e).length === 0;
   };
 
-  const next = () => {
+  const next = async () => {
     if (step === 0 && !validateDelivery()) return;
     if (step === 2) {
+      // QPay flow: create invoice, show QR, wait for payment.
+      if (payment === "qpay") {
+        const newOrderId = generateOrderId(Math.floor(1000 + Math.random() * 9000));
+        setOrderId(newOrderId);
+        setQpayLoading(true);
+        setQpayError(null);
+        try {
+          const address = `${form.street}, ${form.khoroo ? form.khoroo + ", " : ""}${form.district}, ${form.city}`;
+          const res = await fetch("/api/qpay/invoice", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              orderId: newOrderId,
+              amount: total,
+              description: `Chicago Outlet захиалга ${newOrderId}`,
+              customer: {
+                name: form.name,
+                email: form.email,
+                phone: form.phone,
+                address,
+              },
+              items: items.map((i) => ({
+                productId: i.productId,
+                productName: i.name,
+                sku: i.sku,
+                size: i.size,
+                color: i.color,
+                qty: i.qty,
+                unitPrice: i.unitPrice,
+                image: i.image,
+              })),
+              subtotal,
+              shippingFee,
+              discountAmount: discount,
+              couponCode: null,
+              shippingMethod,
+            }),
+          });
+          const data = await res.json();
+          if (!res.ok) {
+            setQpayError(data.error ?? "QPay invoice үүсэх үед алдаа гарлаа.");
+            setQpayLoading(false);
+            return;
+          }
+          setQpayInvoice(data as QpayInvoice);
+        } catch {
+          setQpayError("Сүлжээний алдаа.");
+          setQpayLoading(false);
+          return;
+        }
+        setQpayLoading(false);
+        return; // төлбөр хүлээж байх хүртэл step өөрчлөхгүй
+      }
       setOrderId(generateOrderId(Math.floor(1000 + Math.random() * 9000)));
       clear();
     }
     setStep((s) => Math.min(STEPS.length - 1, s + 1));
     window.scrollTo({ top: 0 });
   };
+
+  // Poll qPay every 3s while waiting for payment.
+  useEffect(() => {
+    if (!qpayInvoice) return;
+    let cancelled = false;
+    const id = setInterval(async () => {
+      if (cancelled) return;
+      setQpayChecking(true);
+      try {
+        const res = await fetch(`/api/qpay/check?invoice_id=${encodeURIComponent(qpayInvoice.invoice_id)}`);
+        const data = await res.json();
+        if (data.paid) {
+          clearInterval(id);
+          clear();
+          setStep(3);
+          setQpayInvoice(null);
+          window.scrollTo({ top: 0 });
+        }
+      } catch {
+        // swallow; will retry
+      } finally {
+        if (!cancelled) setQpayChecking(false);
+      }
+    }, 3000);
+    return () => {
+      cancelled = true;
+      clearInterval(id);
+    };
+  }, [qpayInvoice, clear]);
 
   if (items.length === 0 && step < 3) {
     return (
@@ -163,16 +257,12 @@ export default function CheckoutPage() {
                   title="Дансаар шилжүүлэх"
                   desc={`${BRAND.bank.name} · ${BRAND.bank.account} · ${BRAND.bank.holder}`}
                 />
-                <div className="rounded-lg border border-dashed bg-background p-4">
-                  <div className="flex items-center justify-between">
-                    <span className="font-semibold">QPay · Удахгүй</span>
-                    <span className="rounded-full bg-border px-2 py-0.5 text-[10px] font-semibold uppercase">Coming Soon</span>
-                  </div>
-                  <p className="mt-1 text-sm text-muted">QPay дагуу төлбөр удахгүй нэмэгдэх болно.</p>
-                  <button disabled className="mt-2 cursor-not-allowed rounded-md border px-3 py-1.5 text-xs text-muted">
-                    Бэлэн болоход мэдэгдэх
-                  </button>
-                </div>
+                <PaymentOption
+                  active={payment === "qpay"}
+                  onClick={() => setPayment("qpay")}
+                  title="QPay"
+                  desc="Банкны аппликейшнээр QR уншуулж төлөх"
+                />
               </div>
               {payment === "bank_transfer" && (
                 <div className="mt-4 rounded-lg bg-background p-4 text-sm">
@@ -182,6 +272,51 @@ export default function CheckoutPage() {
                   <p className="text-muted">Хүлээн авагч: {BRAND.bank.holder}</p>
                   <p className="mt-1 text-muted">Гүйлгээний утга дээр захиалгын дугаараа бичнэ үү.</p>
                 </div>
+              )}
+
+              {payment === "qpay" && qpayInvoice && (
+                <div className="mt-4 rounded-lg border bg-background p-5 text-center">
+                  <p className="text-sm font-semibold">QPay QR код</p>
+                  <p className="mt-1 text-xs text-muted">Банкны аппликейшнээр уншуулж төлбөрөө төлнө үү.</p>
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img
+                    src={qpayInvoice.qr_image.startsWith("data:") ? qpayInvoice.qr_image : `data:image/png;base64,${qpayInvoice.qr_image}`}
+                    alt="QPay QR"
+                    className="mx-auto mt-3 h-56 w-56 rounded-md border bg-white p-2"
+                  />
+                  {qpayInvoice.qPay_shortUrl && (
+                    <a
+                      href={qpayInvoice.qPay_shortUrl}
+                      target="_blank"
+                      rel="noreferrer"
+                      className="mt-3 inline-block rounded-md border px-4 py-2 text-xs font-semibold"
+                    >
+                      QPay хуудасанд нээх
+                    </a>
+                  )}
+                  {qpayInvoice.urls && qpayInvoice.urls.length > 0 && (
+                    <div className="mt-3 flex flex-wrap justify-center gap-2">
+                      {qpayInvoice.urls.map((u) => (
+                        <a
+                          key={u.link}
+                          href={u.link}
+                          target="_blank"
+                          rel="noreferrer"
+                          className="rounded-full border px-3 py-1 text-[11px] font-medium hover:bg-foreground hover:text-white"
+                        >
+                          {u.name}
+                        </a>
+                      ))}
+                    </div>
+                  )}
+                  <p className="mt-4 text-xs text-muted">
+                    {qpayChecking ? "Төлбөр шалгаж байна…" : "Төлбөрийг хүлээж байна…"}
+                  </p>
+                </div>
+              )}
+
+              {payment === "qpay" && qpayError && (
+                <p className="mt-3 rounded-md bg-danger/10 px-3 py-2 text-sm text-danger">{qpayError}</p>
               )}
             </div>
           )}
@@ -220,8 +355,20 @@ export default function CheckoutPage() {
                   <ArrowLeftIcon className="h-4 w-4" /> Сагс
                 </Link>
               )}
-              <button onClick={next} className="rounded-md bg-foreground px-8 py-3 text-sm font-semibold text-white hover:bg-accent hover:text-foreground">
-                {step === 2 ? "Захиалга баталгаажуулах" : "Үргэлжлүүлэх"}
+              <button
+                onClick={next}
+                disabled={qpayLoading || (payment === "qpay" && qpayInvoice !== null)}
+                className="rounded-md bg-foreground px-8 py-3 text-sm font-semibold text-white hover:bg-accent hover:text-foreground disabled:opacity-50"
+              >
+                {step === 2
+                  ? payment === "qpay"
+                    ? qpayLoading
+                      ? "QR бэлдэж байна…"
+                      : qpayInvoice
+                      ? "Төлбөр хүлээж байна…"
+                      : "QPay-г үүсгэх"
+                    : "Захиалга баталгаажуулах"
+                  : "Үргэлжлүүлэх"}
               </button>
             </div>
           )}

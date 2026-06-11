@@ -144,19 +144,19 @@ export function Header({ announcements }: { announcements?: string[] } = {}) {
             >
               <MenuIcon />
             </button>
-            <nav className="hidden items-center gap-8 font-elegant text-[17px] tracking-wide md:flex">
+            <nav className="hidden items-center gap-3 font-elegant text-[12px] tracking-wide md:flex lg:gap-5 lg:text-[13px]">
               {NAV_ITEMS.map((n) => (
                 <div key={n.slug} onMouseEnter={() => setHovered(n.slug)} className="flex items-center">
                   <Link
                     href={n.slug === "sale" ? "/shop?gender=sale" : `/shop?category=${encodeURIComponent(CATEGORIES.find((c) => c.slug === n.slug)?.name ?? n.label)}`}
                     className={classNames(
-                      "group relative flex items-center gap-1 py-2 font-medium transition-colors",
+                      "group relative flex items-center gap-0.5 py-2 font-medium transition-colors",
                       n.accent ? "italic text-danger" : "hover:text-accent-dark"
                     )}
                   >
                     {n.label}
                     {!n.accent && (
-                      <ChevronDown className="opacity-50 transition-transform group-hover:rotate-180" />
+                      <ChevronDown className="h-3 w-3 opacity-50 transition-transform group-hover:rotate-180" />
                     )}
                     <span
                       className={classNames(
