@@ -4,7 +4,6 @@ import Link from "next/link";
 import { useEffect, useState } from "react";
 import { useCart } from "@/lib/store/cart";
 import { formatMNT, classNames, isValidMnPhone, isValidEmail, generateOrderId } from "@/lib/utils";
-import { BRAND } from "@/lib/brand";
 import { CheckIcon, ArrowLeftIcon } from "@/components/Icons";
 import type { PaymentMethod } from "@/lib/types";
 
@@ -23,7 +22,7 @@ export default function CheckoutPage() {
   const subtotal = useCart((s) => s.subtotal());
   const [step, setStep] = useState(0);
   const [orderId, setOrderId] = useState("");
-  const [payment, setPayment] = useState<PaymentMethod>("cash_on_delivery");
+  const [payment] = useState<PaymentMethod>("qpay");
 
   const [form, setForm] = useState({
     name: "",
@@ -40,9 +39,8 @@ export default function CheckoutPage() {
   const [qpayError, setQpayError] = useState<string | null>(null);
   const [qpayChecking, setQpayChecking] = useState(false);
 
-  const codFee = payment === "cash_on_delivery" ? BRAND.codFee : 0;
   const shippingFee = shippingMethod === "express" ? BRAND.expressFee : 0;
-  const total = Math.max(0, subtotal - discount) + shippingFee + codFee;
+  const total = Math.max(0, subtotal - discount) + shippingFee;
 
   const set = (k: string, v: string) => setForm((f) => ({ ...f, [k]: v }));
 
@@ -113,8 +111,6 @@ export default function CheckoutPage() {
         setQpayLoading(false);
         return; // төлбөр хүлээж байх хүртэл step өөрчлөхгүй
       }
-      setOrderId(generateOrderId(Math.floor(1000 + Math.random() * 9000)));
-      clear();
     }
     setStep((s) => Math.min(STEPS.length - 1, s + 1));
     window.scrollTo({ top: 0 });
@@ -243,38 +239,10 @@ export default function CheckoutPage() {
 
           {step === 2 && (
             <div>
-              <h2 className="mb-4 font-serif text-xl font-bold">Төлбөрийн хэлбэр</h2>
-              <div className="space-y-3">
-                <PaymentOption
-                  active={payment === "cash_on_delivery"}
-                  onClick={() => setPayment("cash_on_delivery")}
-                  title="Бэлэн мөнгө (хүргэлтээр)"
-                  desc={`УБ хотод боломжтой · +${formatMNT(BRAND.codFee)} шимтгэл`}
-                />
-                <PaymentOption
-                  active={payment === "bank_transfer"}
-                  onClick={() => setPayment("bank_transfer")}
-                  title="Дансаар шилжүүлэх"
-                  desc={`${BRAND.bank.name} · ${BRAND.bank.account} · ${BRAND.bank.holder}`}
-                />
-                <PaymentOption
-                  active={payment === "qpay"}
-                  onClick={() => setPayment("qpay")}
-                  title="QPay"
-                  desc="Банкны аппликейшнээр QR уншуулж төлөх"
-                />
-              </div>
-              {payment === "bank_transfer" && (
-                <div className="mt-4 rounded-lg bg-background p-4 text-sm">
-                  <p className="font-semibold">Шилжүүлгийн заавар:</p>
-                  <p className="mt-1 text-muted">Банк: {BRAND.bank.name}</p>
-                  <p className="text-muted">Данс: {BRAND.bank.account}</p>
-                  <p className="text-muted">Хүлээн авагч: {BRAND.bank.holder}</p>
-                  <p className="mt-1 text-muted">Гүйлгээний утга дээр захиалгын дугаараа бичнэ үү.</p>
-                </div>
-              )}
+              <h2 className="mb-4 font-serif text-xl font-bold">Төлбөр — QPay</h2>
+              <p className="mb-4 text-sm text-muted">Банкны аппликейшнээр QR уншуулж төлнө үү.</p>
 
-              {payment === "qpay" && qpayInvoice && (
+              {qpayInvoice && (
                 <div className="mt-4 rounded-lg border bg-background p-5 text-center">
                   <p className="text-sm font-semibold">QPay QR код</p>
                   <p className="mt-1 text-xs text-muted">Банкны аппликейшнээр уншуулж төлбөрөө төлнө үү.</p>
@@ -315,7 +283,7 @@ export default function CheckoutPage() {
                 </div>
               )}
 
-              {payment === "qpay" && qpayError && (
+              {qpayError && (
                 <p className="mt-3 rounded-md bg-danger/10 px-3 py-2 text-sm text-danger">{qpayError}</p>
               )}
             </div>
@@ -361,13 +329,11 @@ export default function CheckoutPage() {
                 className="rounded-md bg-foreground px-8 py-3 text-sm font-semibold text-white hover:bg-accent hover:text-foreground disabled:opacity-50"
               >
                 {step === 2
-                  ? payment === "qpay"
-                    ? qpayLoading
-                      ? "QR бэлдэж байна…"
-                      : qpayInvoice
-                      ? "Төлбөр хүлээж байна…"
-                      : "QPay-г үүсгэх"
-                    : "Захиалга баталгаажуулах"
+                  ? qpayLoading
+                    ? "QR бэлдэж байна…"
+                    : qpayInvoice
+                    ? "Төлбөр хүлээж байна…"
+                    : "QPay-г үүсгэх"
                   : "Үргэлжлүүлэх"}
               </button>
             </div>
@@ -382,7 +348,7 @@ export default function CheckoutPage() {
               <Row label="Дэд дүн" value={formatMNT(subtotal)} />
               {discount > 0 && <Row label="Хямдрал" value={`-${formatMNT(discount)}`} />}
               <Row label="Хүргэлт" value={shippingFee === 0 ? "Үнэгүй" : formatMNT(shippingFee)} />
-              {codFee > 0 && <Row label="COD шимтгэл" value={formatMNT(codFee)} />}
+
               <div className="flex justify-between border-t pt-3 text-base font-bold">
                 <span>Нийт</span>
                 <span>{formatMNT(total)}</span>
@@ -417,26 +383,6 @@ function Field({ label, error, children }: { label: string; error?: string; chil
       {children}
       {error && <span className="mt-1 block text-xs text-danger">{error}</span>}
     </label>
-  );
-}
-
-function PaymentOption({ active, onClick, title, desc }: { active: boolean; onClick: () => void; title: string; desc: string }) {
-  return (
-    <button
-      onClick={onClick}
-      className={classNames(
-        "flex w-full items-start gap-3 rounded-lg border p-4 text-left",
-        active ? "border-foreground ring-1 ring-foreground" : "hover:border-foreground"
-      )}
-    >
-      <span className={classNames("mt-0.5 flex h-4 w-4 items-center justify-center rounded-full border", active && "border-foreground")}>
-        {active && <span className="h-2 w-2 rounded-full bg-foreground" />}
-      </span>
-      <span>
-        <span className="block font-semibold">{title}</span>
-        <span className="block text-sm text-muted">{desc}</span>
-      </span>
-    </button>
   );
 }
 

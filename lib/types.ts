@@ -67,7 +67,7 @@ export type PaymentStatus =
   | "paid"
   | "refunded";
 
-export type PaymentMethod = "qpay" | "cash_on_delivery" | "bank_transfer";
+export type PaymentMethod = "qpay";
 
 export interface OrderItem {
   productId: string;
