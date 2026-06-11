@@ -32,7 +32,13 @@ const DEFAULT_ANNOUNCEMENTS = [
   "100% жинхэнэ брэндийн бүтээгдэхүүн",
 ];
 
-export function Header({ announcements }: { announcements?: string[] } = {}) {
+export function Header({
+  announcements,
+  subcategoriesByCategory,
+}: {
+  announcements?: string[];
+  subcategoriesByCategory?: Record<string, string[]>;
+} = {}) {
   const router = useRouter();
   const count = useCart((s) => s.count());
   const setOpen = useCart((s) => s.setOpen);
@@ -227,40 +233,56 @@ export function Header({ announcements }: { announcements?: string[] } = {}) {
         {/* Mega-menu dropdown */}
         <div
           className={classNames(
-            "absolute inset-x-0 top-full hidden overflow-hidden border-b bg-surface shadow-lg transition-all duration-300 md:block",
+            "absolute inset-x-0 top-full hidden overflow-hidden bg-surface transition-all duration-300 md:block",
             hovered && hovered !== "sale"
-              ? "max-h-[28rem] opacity-100"
+              ? "max-h-[32rem] border-b opacity-100 shadow-[0_24px_48px_-16px_rgba(0,0,0,0.18)]"
               : "pointer-events-none max-h-0 opacity-0"
           )}
         >
-          <div className="container-page py-8">
+          {/* gradient accent bar */}
+          <div className="h-[2px] w-full bg-gradient-to-r from-transparent via-accent to-transparent" />
+          <div className="container-page py-10">
             {(() => {
               const cat = CATEGORIES.find((c) => c.slug === hovered);
               if (!cat) return null;
 
+              // Real subcategories from DB; fall back to static children if DB is empty.
+              const dbSubs = subcategoriesByCategory?.[cat.name] ?? [];
+              const subs: string[] =
+                dbSubs.length > 0
+                  ? dbSubs
+                  : (cat.children?.map((c) => c.name) ?? []);
+
               // "Хувцас" splits by gender (Эрэгтэй / Эмэгтэй / Хүүхэд).
               if (cat.slug === "huvtsas") {
                 return (
-                  <div className="grid grid-cols-3 gap-8">
+                  <div className="grid grid-cols-3 gap-10">
                     {GENDERS.map((g) => (
-                      <div key={g.value}>
+                      <div key={g.value} className="group/col">
                         <Link
                           href={`/shop?category=${encodeURIComponent(cat.name)}&gender=${g.value}`}
-                          className="font-serif text-sm font-semibold hover:text-accent-dark"
+                          className="flex items-center gap-2 pb-3 font-serif text-[15px] font-semibold tracking-wide transition-colors hover:text-accent-dark"
                         >
                           {g.nameMn}
+                          <ChevronDown className="-rotate-90 opacity-0 transition-all group-hover/col:translate-x-1 group-hover/col:opacity-60" />
                         </Link>
-                        <ul className="mt-3 space-y-2">
-                          {cat.children?.map((sub) => (
-                            <li key={sub.slug}>
-                              <Link
-                                href={`/shop?category=${encodeURIComponent(cat.name)}&gender=${g.value}&subcategory=${encodeURIComponent(sub.name)}`}
-                                className="text-[13px] text-muted transition-colors hover:text-foreground"
-                              >
-                                {sub.nameMn}
-                              </Link>
-                            </li>
-                          ))}
+                        <div className="mb-3 h-px w-10 bg-accent" />
+                        <ul className="space-y-1.5">
+                          {subs.length === 0 ? (
+                            <li className="text-[12px] italic text-muted">Бараа бүртгэгдээгүй</li>
+                          ) : (
+                            subs.map((sub) => (
+                              <li key={sub}>
+                                <Link
+                                  href={`/shop?category=${encodeURIComponent(cat.name)}&gender=${g.value}&subcategory=${encodeURIComponent(sub)}`}
+                                  className="group/link inline-flex items-center gap-1.5 rounded-md py-1 text-[13px] text-muted transition-colors hover:text-foreground"
+                                >
+                                  <span className="h-px w-0 bg-foreground transition-all duration-300 group-hover/link:w-4" />
+                                  {sub}
+                                </Link>
+                              </li>
+                            ))
+                          )}
                         </ul>
                       </div>
                     ))}
@@ -268,18 +290,42 @@ export function Header({ announcements }: { announcements?: string[] } = {}) {
                 );
               }
 
-              // Other top-level categories: single grid of subcategories.
+              // Other top-level categories: card grid + "Бүгдийг үзэх".
               return (
-                <div className="grid grid-cols-4 gap-8">
-                  {cat.children?.map((sub) => (
+                <div>
+                  <div className="mb-5 flex items-center justify-between">
+                    <div>
+                      <h3 className="font-serif text-lg font-bold">{cat.nameMn}</h3>
+                      <p className="text-xs text-muted">
+                        {subs.length} дэд ангилал
+                      </p>
+                    </div>
                     <Link
-                      key={sub.slug}
-                      href={`/shop?category=${encodeURIComponent(cat.name)}&subcategory=${encodeURIComponent(sub.name)}`}
-                      className="block rounded-lg p-3 text-sm font-medium transition hover:bg-background"
+                      href={`/shop?category=${encodeURIComponent(cat.name)}`}
+                      className="group inline-flex items-center gap-1.5 text-xs font-semibold uppercase tracking-wider text-accent-dark"
                     >
-                      {sub.nameMn}
+                      Бүгдийг үзэх
+                      <ChevronDown className="-rotate-90 transition-transform group-hover:translate-x-1" />
                     </Link>
-                  ))}
+                  </div>
+                  {subs.length === 0 ? (
+                    <p className="py-6 text-center text-sm italic text-muted">
+                      Энэ ангилалд бараа бүртгэгдээгүй байна.
+                    </p>
+                  ) : (
+                    <div className="grid grid-cols-4 gap-3">
+                      {subs.map((sub) => (
+                        <Link
+                          key={sub}
+                          href={`/shop?category=${encodeURIComponent(cat.name)}&subcategory=${encodeURIComponent(sub)}`}
+                          className="group relative overflow-hidden rounded-lg border border-transparent bg-background/50 p-4 text-sm font-medium transition-all duration-200 hover:-translate-y-0.5 hover:border-accent hover:bg-surface hover:shadow-md"
+                        >
+                          <span className="relative z-10">{sub}</span>
+                          <ChevronDown className="absolute right-3 top-1/2 z-10 -translate-y-1/2 -rotate-90 opacity-0 transition-all duration-200 group-hover:translate-x-1 group-hover:opacity-60" />
+                        </Link>
+                      ))}
+                    </div>
+                  )}
                 </div>
               );
             })()}
