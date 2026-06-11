@@ -4,7 +4,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { BRAND } from "@/lib/brand";
-import { CATEGORIES, GENDERS } from "@/lib/data/categories";
+import { CATEGORIES } from "@/lib/data/categories";
 import { PRODUCTS } from "@/lib/data/products";
 import { useCart } from "@/lib/store/cart";
 import { classNames, finalPrice, formatMNT } from "@/lib/utils";
@@ -19,8 +19,7 @@ import {
   ChevronDown,
 } from "./Icons";
 
-// Top-level navigation. Categories open a mega-menu; gender links go
-// straight to the shop filter; "Хямдрал" routes to the sale filter.
+// Top-level navigation: categories open a mega-menu; "Хямдрал" routes to sale.
 const NAV_ITEMS: {
   slug: string;
   label: string;
@@ -29,11 +28,6 @@ const NAV_ITEMS: {
   accent?: boolean;
 }[] = [
   ...CATEGORIES.map((c) => ({ slug: c.slug, label: c.nameMn, hasMenu: true })),
-  ...GENDERS.filter((g) => g.value !== "kids").map((g) => ({
-    slug: `gender-${g.value}`,
-    label: g.nameMn,
-    href: `/shop?gender=${g.value}`,
-  })),
   { slug: "sale", label: "Хямдрал", href: "/shop?gender=sale", accent: true },
 ];
 
@@ -46,9 +40,11 @@ const DEFAULT_ANNOUNCEMENTS = [
 export function Header({
   announcements,
   subcategoriesByCategory,
+  subcategoriesByCategoryGender,
 }: {
   announcements?: string[];
   subcategoriesByCategory?: Record<string, string[]>;
+  subcategoriesByCategoryGender?: Record<string, Record<string, string[]>>;
 } = {}) {
   const router = useRouter();
   const count = useCart((s) => s.count());
@@ -273,6 +269,70 @@ export function Header({
               if (!cat) return null;
               const subs = subcategoriesByCategory?.[cat.name] ?? [];
               if (subs.length === 0) return null;
+
+              // "Хувцас" ангилал — Эрэгтэй / Эмэгтэй / Унисекс багана.
+              if (cat.slug === "huvtsas") {
+                const byGender = subcategoriesByCategoryGender?.[cat.name] ?? {};
+                const cols: { key: string; label: string; subs: string[] }[] = [
+                  { key: "men", label: "Эрэгтэй", subs: byGender["men"] ?? [] },
+                  { key: "women", label: "Эмэгтэй", subs: byGender["women"] ?? [] },
+                  { key: "unisex", label: "Унисекс", subs: byGender["unisex"] ?? [] },
+                ].filter((c) => c.subs.length > 0);
+
+                if (cols.length === 0) return null;
+
+                return (
+                  <div>
+                    <div className="mb-5 flex items-center justify-between">
+                      <div>
+                        <h3 className="font-serif text-lg font-bold">{cat.nameMn}</h3>
+                        <p className="text-xs text-muted">{subs.length} дэд ангилал</p>
+                      </div>
+                      <Link
+                        href={`/shop?category=${encodeURIComponent(cat.name)}`}
+                        className="group inline-flex items-center gap-1.5 text-xs font-semibold uppercase tracking-wider text-accent-dark"
+                      >
+                        Бүгдийг үзэх
+                        <ChevronDown className="-rotate-90 transition-transform group-hover:translate-x-1" />
+                      </Link>
+                    </div>
+                    <div
+                      className={classNames(
+                        "grid gap-10",
+                        cols.length === 1 && "grid-cols-1",
+                        cols.length === 2 && "grid-cols-2",
+                        cols.length === 3 && "grid-cols-3"
+                      )}
+                    >
+                      {cols.map((col) => (
+                        <div key={col.key} className="group/col">
+                          <Link
+                            href={`/shop?category=${encodeURIComponent(cat.name)}&gender=${col.key}`}
+                            className="flex items-center gap-2 pb-3 font-serif text-[15px] font-semibold tracking-wide transition-colors hover:text-accent-dark"
+                          >
+                            {col.label}
+                            <ChevronDown className="-rotate-90 opacity-0 transition-all group-hover/col:translate-x-1 group-hover/col:opacity-60" />
+                          </Link>
+                          <div className="mb-3 h-px w-10 bg-accent" />
+                          <ul className="space-y-1.5">
+                            {col.subs.map((sub) => (
+                              <li key={sub}>
+                                <Link
+                                  href={`/shop?category=${encodeURIComponent(cat.name)}&gender=${col.key}&subcategory=${encodeURIComponent(sub)}`}
+                                  className="group/link inline-flex items-center gap-1.5 rounded-md py-1 text-[13px] text-muted transition-colors hover:text-foreground"
+                                >
+                                  <span className="h-px w-0 bg-foreground transition-all duration-300 group-hover/link:w-4" />
+                                  {sub}
+                                </Link>
+                              </li>
+                            ))}
+                          </ul>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                );
+              }
 
               return (
                 <div>

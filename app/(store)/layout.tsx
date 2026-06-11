@@ -22,28 +22,43 @@ async function getAnnouncements(): Promise<string[]> {
   }
 }
 
-async function getSubcategoriesByCategory(): Promise<Record<string, string[]>> {
+async function getSubcategoryData(): Promise<{
+  byCategory: Record<string, string[]>;
+  byCategoryGender: Record<string, Record<string, string[]>>;
+}> {
   try {
     const supabase = await createClient();
     const { data } = await supabase
       .from("products")
-      .select("category, subcategory")
+      .select("category, subcategory, gender")
       .eq("is_active", true)
       .not("subcategory", "is", null)
       .neq("subcategory", "");
 
-    const map: Record<string, Set<string>> = {};
-    for (const row of (data ?? []) as { category: string; subcategory: string }[]) {
+    const byCat: Record<string, Set<string>> = {};
+    const byCatGender: Record<string, Record<string, Set<string>>> = {};
+    for (const row of (data ?? []) as {
+      category: string;
+      subcategory: string;
+      gender: string | null;
+    }[]) {
       if (!row.category || !row.subcategory) continue;
-      (map[row.category] ??= new Set()).add(row.subcategory);
+      (byCat[row.category] ??= new Set()).add(row.subcategory);
+      const g = (row.gender ?? "unisex").toLowerCase();
+      ((byCatGender[row.category] ??= {})[g] ??= new Set()).add(row.subcategory);
     }
-    const out: Record<string, string[]> = {};
-    for (const [cat, set] of Object.entries(map)) {
-      out[cat] = Array.from(set).sort();
+    const byCategory: Record<string, string[]> = {};
+    for (const [k, v] of Object.entries(byCat)) byCategory[k] = Array.from(v).sort();
+    const byCategoryGender: Record<string, Record<string, string[]>> = {};
+    for (const [cat, gMap] of Object.entries(byCatGender)) {
+      byCategoryGender[cat] = {};
+      for (const [g, set] of Object.entries(gMap)) {
+        byCategoryGender[cat][g] = Array.from(set).sort();
+      }
     }
-    return out;
+    return { byCategory, byCategoryGender };
   } catch {
-    return {};
+    return { byCategory: {}, byCategoryGender: {} };
   }
 }
 
@@ -52,15 +67,16 @@ export default async function StoreLayout({
 }: {
   children: React.ReactNode;
 }) {
-  const [announcements, subcategoriesByCategory] = await Promise.all([
+  const [announcements, subData] = await Promise.all([
     getAnnouncements(),
-    getSubcategoriesByCategory(),
+    getSubcategoryData(),
   ]);
   return (
     <>
       <Header
         announcements={announcements}
-        subcategoriesByCategory={subcategoriesByCategory}
+        subcategoriesByCategory={subData.byCategory}
+        subcategoriesByCategoryGender={subData.byCategoryGender}
       />
       <main className="flex-1">{children}</main>
       <Footer />
