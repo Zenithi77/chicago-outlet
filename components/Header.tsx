@@ -53,6 +53,25 @@ export function Header({
   const [menuOpen, setMenuOpen] = useState(false);
   const [searchOpen, setSearchOpen] = useState(false);
   const [hovered, setHovered] = useState<string | null>(null);
+  const hoverCloseTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const openMenu = (slug: string | null) => {
+    if (hoverCloseTimer.current) {
+      clearTimeout(hoverCloseTimer.current);
+      hoverCloseTimer.current = null;
+    }
+    setHovered(slug);
+  };
+  const scheduleClose = () => {
+    if (hoverCloseTimer.current) clearTimeout(hoverCloseTimer.current);
+    hoverCloseTimer.current = setTimeout(() => setHovered(null), 180);
+  };
+  const closeMenu = () => {
+    if (hoverCloseTimer.current) {
+      clearTimeout(hoverCloseTimer.current);
+      hoverCloseTimer.current = null;
+    }
+    setHovered(null);
+  };
   const [scrolled, setScrolled] = useState(false);
   const [announce, setAnnounce] = useState(0);
   const [query, setQuery] = useState("");
@@ -159,7 +178,7 @@ export function Header({
             </button>
             <nav
               className="hidden items-center gap-3 font-elegant text-[12px] tracking-wide md:flex lg:gap-5 lg:text-[13px]"
-              onMouseLeave={() => setHovered(null)}
+              onMouseLeave={scheduleClose}
             >
               {NAV_ITEMS.map((n) => {
                 const href =
@@ -168,12 +187,12 @@ export function Header({
                 return (
                   <div
                     key={n.slug}
-                    onMouseEnter={() => setHovered(n.hasMenu ? n.slug : null)}
+                    onMouseEnter={() => openMenu(n.hasMenu ? n.slug : null)}
                     className="flex items-center"
                   >
                     <Link
                       href={href}
-                      onClick={() => setHovered(null)}
+                      onClick={closeMenu}
                       className={classNames(
                         "group relative flex items-center gap-0.5 py-2 font-medium transition-colors",
                         n.accent ? "italic text-danger" : "hover:text-accent-dark"
@@ -264,11 +283,9 @@ export function Header({
               ? "max-h-[32rem] border-b opacity-100 shadow-[0_24px_48px_-16px_rgba(0,0,0,0.18)]"
               : "pointer-events-none max-h-0 opacity-0"
           )}
-          onMouseEnter={() => {
-            if (hovered) setHovered(hovered);
-          }}
-          onMouseLeave={() => setHovered(null)}
-          onClick={() => setHovered(null)}
+          onMouseEnter={() => openMenu(hovered)}
+          onMouseLeave={scheduleClose}
+          onClick={closeMenu}
         >
           {/* gradient accent bar */}
           <div className="h-[2px] w-full bg-gradient-to-r from-transparent via-accent to-transparent" />
