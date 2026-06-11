@@ -157,7 +157,10 @@ export function Header({
             >
               <MenuIcon />
             </button>
-            <nav className="hidden items-center gap-3 font-elegant text-[12px] tracking-wide md:flex lg:gap-5 lg:text-[13px]">
+            <nav
+              className="hidden items-center gap-3 font-elegant text-[12px] tracking-wide md:flex lg:gap-5 lg:text-[13px]"
+              onMouseLeave={() => setHovered(null)}
+            >
               {NAV_ITEMS.map((n) => {
                 const href =
                   n.href ??
@@ -170,6 +173,7 @@ export function Header({
                   >
                     <Link
                       href={href}
+                      onClick={() => setHovered(null)}
                       className={classNames(
                         "group relative flex items-center gap-0.5 py-2 font-medium transition-colors",
                         n.accent ? "italic text-danger" : "hover:text-accent-dark"
@@ -260,6 +264,11 @@ export function Header({
               ? "max-h-[32rem] border-b opacity-100 shadow-[0_24px_48px_-16px_rgba(0,0,0,0.18)]"
               : "pointer-events-none max-h-0 opacity-0"
           )}
+          onMouseEnter={() => {
+            if (hovered) setHovered(hovered);
+          }}
+          onMouseLeave={() => setHovered(null)}
+          onClick={() => setHovered(null)}
         >
           {/* gradient accent bar */}
           <div className="h-[2px] w-full bg-gradient-to-r from-transparent via-accent to-transparent" />
