@@ -152,11 +152,8 @@ export function ProductDetail({ product }: { product: Product }) {
           {/* Sizes */}
           {hasSizes && (
           <div className="mt-6">
-            <div className="mb-2 flex items-center justify-between">
+            <div className="mb-2">
               <p className="text-sm font-medium">Хэмжээ</p>
-              <button onClick={() => setTab(1)} className="text-xs text-accent-dark underline">
-                Хэмжээний заавар
-              </button>
             </div>
             <div className="flex flex-wrap gap-2">
               {product.sizes.map((s) => (

@@ -5,7 +5,7 @@ import { useSearchParams } from "next/navigation";
 import { CATEGORIES } from "@/lib/data/categories";
 import { ProductCard } from "@/components/ProductCard";
 import { finalPrice, classNames } from "@/lib/utils";
-import { FilterIcon } from "@/components/Icons";
+import { CloseIcon, FilterIcon } from "@/components/Icons";
 import type { Product } from "@/lib/types";
 
 const SORTS = [
@@ -184,12 +184,78 @@ function ShopContent({ products }: { products: Product[] }) {
         <SortSelect sort={sort} setSort={setSort} />
       </div>
 
+      {/* Mobile filter bottom-sheet */}
+      {filtersOpen && (
+        <div className="fixed inset-0 z-50 md:hidden" aria-modal="true">
+          {/* Backdrop */}
+          <div
+            className="absolute inset-0 bg-foreground/40 backdrop-blur-sm"
+            onClick={() => setFiltersOpen(false)}
+          />
+          {/* Sheet */}
+          <div className="absolute inset-x-0 bottom-0 max-h-[85dvh] overflow-y-auto rounded-t-2xl bg-surface pb-safe shadow-2xl">
+            <div className="sticky top-0 flex items-center justify-between border-b bg-surface px-5 py-4">
+              <span className="font-serif text-base font-bold">Шүүлтүүр</span>
+              <button onClick={() => setFiltersOpen(false)} aria-label="Хаах">
+                <CloseIcon className="h-5 w-5" />
+              </button>
+            </div>
+            <div className="space-y-6 px-5 py-4">
+              <FilterGroup label="Ангилал">
+                {CATEGORIES.map((c) => {
+                  const isActive = activeCats.includes(c.name);
+                  const subs = Array.from(new Set(products.filter((p) => p.isActive && p.category === c.name && p.subcategory).map((p) => p.subcategory))).sort();
+                  return (
+                    <div key={c.slug} className="py-1">
+                      <label className="flex cursor-pointer items-center gap-2 text-sm">
+                        <input type="checkbox" checked={isActive} onChange={() => { toggle(activeCats, c.name, setActiveCats); if (isActive) setActiveSubs((s) => s.filter((x) => !subs.includes(x))); }} className="accent-[var(--accent)]" />
+                        {c.nameMn}
+                      </label>
+                      {isActive && subs.length > 0 && (
+                        <div className="ml-5 mt-1 space-y-1 border-l pl-3">
+                          {subs.map((sub) => (
+                            <label key={sub} className="flex cursor-pointer items-center gap-2 text-[13px]">
+                              <input type="checkbox" checked={activeSubs.includes(sub)} onChange={() => toggle(activeSubs, sub, setActiveSubs)} className="accent-[var(--accent)]" />
+                              {sub}
+                            </label>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                  );
+                })}
+              </FilterGroup>
+              <FilterGroup label="Хэмжээ">
+                <div className="flex flex-wrap gap-2">
+                  {ALL_SIZES.map((s) => (
+                    <button key={s} onClick={() => toggle(activeSizes, s, setActiveSizes)} className={classNames("h-10 w-10 rounded-md border text-xs font-medium", activeSizes.includes(s) ? "border-foreground bg-foreground text-white" : "bg-surface hover:border-foreground")}>{s}</button>
+                  ))}
+                </div>
+              </FilterGroup>
+              <FilterGroup label={`Үнэ: ₮${minPrice.toLocaleString()} – ₮${maxPrice.toLocaleString()}`}>
+                <div className="space-y-3">
+                  <div><p className="mb-1 text-[11px] text-muted">Доод хязгаар</p><input type="range" min={dataMin} max={dataMax} step={1000} value={minPrice} onChange={(e) => setMinPrice(Math.min(Number(e.target.value), maxPrice))} className="w-full accent-[var(--accent)]" /></div>
+                  <div><p className="mb-1 text-[11px] text-muted">Дээд хязгаар</p><input type="range" min={dataMin} max={dataMax} step={1000} value={maxPrice} onChange={(e) => setMaxPrice(Math.max(Number(e.target.value), minPrice))} className="w-full accent-[var(--accent)]" /></div>
+                </div>
+              </FilterGroup>
+              <FilterGroup label="Бэлэн байдал">
+                <label className="flex cursor-pointer items-center gap-2 text-sm">
+                  <input type="checkbox" checked={inStockOnly} onChange={(e) => setInStockOnly(e.target.checked)} className="accent-[var(--accent)]" />
+                  Зөвхөн бэлэн байгаа
+                </label>
+              </FilterGroup>
+              <div className="flex gap-3 pb-2">
+                <button onClick={() => { setActiveCats([]); setActiveSubs([]); setActiveSizes([]); setMinPrice(dataMin); setMaxPrice(dataMax); setInStockOnly(false); }} className="flex-1 rounded-md border py-3 text-sm font-semibold">Цэвэрлэх</button>
+                <button onClick={() => setFiltersOpen(false)} className="flex-1 rounded-md bg-foreground py-3 text-sm font-semibold text-white">Харуулах ({filtered.length})</button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
       <div className="flex gap-8">
         <aside
-          className={classNames(
-            "w-60 shrink-0 space-y-6 md:block",
-            filtersOpen ? "block" : "hidden"
-          )}
+          className="hidden w-60 shrink-0 space-y-6 md:block"
         >
           <FilterGroup label="Ангилал">
             {CATEGORIES.map((c) => {
