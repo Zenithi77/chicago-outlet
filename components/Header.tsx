@@ -19,11 +19,22 @@ import {
   ChevronDown,
 } from "./Icons";
 
-// Top-level navigation. The first 4 entries open a mega-menu driven by
-// CATEGORIES; the last "Хямдрал" link routes straight to the sale filter.
-const NAV_ITEMS: { slug: string; label: string; accent?: boolean }[] = [
-  ...CATEGORIES.map((c) => ({ slug: c.slug, label: c.nameMn })),
-  { slug: "sale", label: "Хямдрал", accent: true },
+// Top-level navigation. Categories open a mega-menu; gender links go
+// straight to the shop filter; "Хямдрал" routes to the sale filter.
+const NAV_ITEMS: {
+  slug: string;
+  label: string;
+  href?: string;
+  hasMenu?: boolean;
+  accent?: boolean;
+}[] = [
+  ...CATEGORIES.map((c) => ({ slug: c.slug, label: c.nameMn, hasMenu: true })),
+  ...GENDERS.filter((g) => g.value !== "kids").map((g) => ({
+    slug: `gender-${g.value}`,
+    label: g.nameMn,
+    href: `/shop?gender=${g.value}`,
+  })),
+  { slug: "sale", label: "Хямдрал", href: "/shop?gender=sale", accent: true },
 ];
 
 const DEFAULT_ANNOUNCEMENTS = [
@@ -151,28 +162,37 @@ export function Header({
               <MenuIcon />
             </button>
             <nav className="hidden items-center gap-3 font-elegant text-[12px] tracking-wide md:flex lg:gap-5 lg:text-[13px]">
-              {NAV_ITEMS.map((n) => (
-                <div key={n.slug} onMouseEnter={() => setHovered(n.slug)} className="flex items-center">
-                  <Link
-                    href={n.slug === "sale" ? "/shop?gender=sale" : `/shop?category=${encodeURIComponent(CATEGORIES.find((c) => c.slug === n.slug)?.name ?? n.label)}`}
-                    className={classNames(
-                      "group relative flex items-center gap-0.5 py-2 font-medium transition-colors",
-                      n.accent ? "italic text-danger" : "hover:text-accent-dark"
-                    )}
+              {NAV_ITEMS.map((n) => {
+                const href =
+                  n.href ??
+                  `/shop?category=${encodeURIComponent(CATEGORIES.find((c) => c.slug === n.slug)?.name ?? n.label)}`;
+                return (
+                  <div
+                    key={n.slug}
+                    onMouseEnter={() => setHovered(n.hasMenu ? n.slug : null)}
+                    className="flex items-center"
                   >
-                    {n.label}
-                    {!n.accent && (
-                      <ChevronDown className="h-3 w-3 opacity-50 transition-transform group-hover:rotate-180" />
-                    )}
-                    <span
+                    <Link
+                      href={href}
                       className={classNames(
-                        "absolute inset-x-0 -bottom-px h-px origin-left scale-x-0 bg-foreground transition-transform duration-300 group-hover:scale-x-100",
-                        hovered === n.slug && "scale-x-100"
+                        "group relative flex items-center gap-0.5 py-2 font-medium transition-colors",
+                        n.accent ? "italic text-danger" : "hover:text-accent-dark"
                       )}
-                    />
-                  </Link>
-                </div>
-              ))}
+                    >
+                      {n.label}
+                      {n.hasMenu && (
+                        <ChevronDown className="h-3 w-3 opacity-50 transition-transform group-hover:rotate-180" />
+                      )}
+                      <span
+                        className={classNames(
+                          "absolute inset-x-0 -bottom-px h-px origin-left scale-x-0 bg-foreground transition-transform duration-300 group-hover:scale-x-100",
+                          hovered === n.slug && "scale-x-100"
+                        )}
+                      />
+                    </Link>
+                  </div>
+                );
+              })}
             </nav>
           </div>
 
@@ -234,7 +254,13 @@ export function Header({
         <div
           className={classNames(
             "absolute inset-x-0 top-full hidden overflow-hidden bg-surface transition-all duration-300 md:block",
-            hovered && hovered !== "sale"
+            (() => {
+              if (!hovered) return false;
+              const cat = CATEGORIES.find((c) => c.slug === hovered);
+              if (!cat) return false;
+              const subs = subcategoriesByCategory?.[cat.name] ?? [];
+              return subs.length > 0;
+            })()
               ? "max-h-[32rem] border-b opacity-100 shadow-[0_24px_48px_-16px_rgba(0,0,0,0.18)]"
               : "pointer-events-none max-h-0 opacity-0"
           )}
@@ -245,52 +271,9 @@ export function Header({
             {(() => {
               const cat = CATEGORIES.find((c) => c.slug === hovered);
               if (!cat) return null;
+              const subs = subcategoriesByCategory?.[cat.name] ?? [];
+              if (subs.length === 0) return null;
 
-              // Real subcategories from DB; fall back to static children if DB is empty.
-              const dbSubs = subcategoriesByCategory?.[cat.name] ?? [];
-              const subs: string[] =
-                dbSubs.length > 0
-                  ? dbSubs
-                  : (cat.children?.map((c) => c.name) ?? []);
-
-              // "Хувцас" splits by gender (Эрэгтэй / Эмэгтэй / Хүүхэд).
-              if (cat.slug === "huvtsas") {
-                return (
-                  <div className="grid grid-cols-3 gap-10">
-                    {GENDERS.map((g) => (
-                      <div key={g.value} className="group/col">
-                        <Link
-                          href={`/shop?category=${encodeURIComponent(cat.name)}&gender=${g.value}`}
-                          className="flex items-center gap-2 pb-3 font-serif text-[15px] font-semibold tracking-wide transition-colors hover:text-accent-dark"
-                        >
-                          {g.nameMn}
-                          <ChevronDown className="-rotate-90 opacity-0 transition-all group-hover/col:translate-x-1 group-hover/col:opacity-60" />
-                        </Link>
-                        <div className="mb-3 h-px w-10 bg-accent" />
-                        <ul className="space-y-1.5">
-                          {subs.length === 0 ? (
-                            <li className="text-[12px] italic text-muted">Бараа бүртгэгдээгүй</li>
-                          ) : (
-                            subs.map((sub) => (
-                              <li key={sub}>
-                                <Link
-                                  href={`/shop?category=${encodeURIComponent(cat.name)}&gender=${g.value}&subcategory=${encodeURIComponent(sub)}`}
-                                  className="group/link inline-flex items-center gap-1.5 rounded-md py-1 text-[13px] text-muted transition-colors hover:text-foreground"
-                                >
-                                  <span className="h-px w-0 bg-foreground transition-all duration-300 group-hover/link:w-4" />
-                                  {sub}
-                                </Link>
-                              </li>
-                            ))
-                          )}
-                        </ul>
-                      </div>
-                    ))}
-                  </div>
-                );
-              }
-
-              // Other top-level categories: card grid + "Бүгдийг үзэх".
               return (
                 <div>
                   <div className="mb-5 flex items-center justify-between">
@@ -308,24 +291,18 @@ export function Header({
                       <ChevronDown className="-rotate-90 transition-transform group-hover:translate-x-1" />
                     </Link>
                   </div>
-                  {subs.length === 0 ? (
-                    <p className="py-6 text-center text-sm italic text-muted">
-                      Энэ ангилалд бараа бүртгэгдээгүй байна.
-                    </p>
-                  ) : (
-                    <div className="grid grid-cols-4 gap-3">
-                      {subs.map((sub) => (
-                        <Link
-                          key={sub}
-                          href={`/shop?category=${encodeURIComponent(cat.name)}&subcategory=${encodeURIComponent(sub)}`}
-                          className="group relative overflow-hidden rounded-lg border border-transparent bg-background/50 p-4 text-sm font-medium transition-all duration-200 hover:-translate-y-0.5 hover:border-accent hover:bg-surface hover:shadow-md"
-                        >
-                          <span className="relative z-10">{sub}</span>
-                          <ChevronDown className="absolute right-3 top-1/2 z-10 -translate-y-1/2 -rotate-90 opacity-0 transition-all duration-200 group-hover:translate-x-1 group-hover:opacity-60" />
-                        </Link>
-                      ))}
-                    </div>
-                  )}
+                  <div className="grid grid-cols-4 gap-3">
+                    {subs.map((sub) => (
+                      <Link
+                        key={sub}
+                        href={`/shop?category=${encodeURIComponent(cat.name)}&subcategory=${encodeURIComponent(sub)}`}
+                        className="group relative overflow-hidden rounded-lg border border-transparent bg-background/50 p-4 text-sm font-medium transition-all duration-200 hover:-translate-y-0.5 hover:border-accent hover:bg-surface hover:shadow-md"
+                      >
+                        <span className="relative z-10">{sub}</span>
+                        <ChevronDown className="absolute right-3 top-1/2 z-10 -translate-y-1/2 -rotate-90 opacity-0 transition-all duration-200 group-hover:translate-x-1 group-hover:opacity-60" />
+                      </Link>
+                    ))}
+                  </div>
                 </div>
               );
             })()}

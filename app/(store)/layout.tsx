@@ -29,7 +29,8 @@ async function getSubcategoriesByCategory(): Promise<Record<string, string[]>> {
       .from("products")
       .select("category, subcategory")
       .eq("is_active", true)
-      .not("subcategory", "is", null);
+      .not("subcategory", "is", null)
+      .neq("subcategory", "");
 
     const map: Record<string, Set<string>> = {};
     for (const row of (data ?? []) as { category: string; subcategory: string }[]) {
