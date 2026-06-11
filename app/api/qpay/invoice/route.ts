@@ -70,9 +70,11 @@ export async function POST(request: Request) {
   const { error: insertErr } = await admin.from("orders").upsert(
     {
       id: orderId,
-      user_id: userId,
-      customer: body.customer,
-      items,
+      customer_id: userId,
+      customer_name: body.customer.name,
+      customer_email: body.customer.email,
+      customer_phone: body.customer.phone,
+      customer_address: body.customer.address,
       subtotal: Math.round(body.subtotal),
       shipping_fee: Math.round(body.shippingFee),
       discount_amount: Math.round(body.discountAmount),
