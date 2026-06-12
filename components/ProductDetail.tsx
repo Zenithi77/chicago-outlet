@@ -109,6 +109,7 @@ export function ProductDetail({ product }: { product: Product }) {
               {product.isNewArrival && <Badge variant="new">New</Badge>}
               {product.isOnSale && <Badge variant="sale">-{product.discountPercent}%</Badge>}
             </div>
+          </div>
         </div>
 
         {/* Info */}
