@@ -915,13 +915,17 @@ function ProductForm({
       </label>
       <label className="block">
         <span className={lbl}>Брэнд</span>
-        <input
+        <select
           name="brand"
-          placeholder="Chicago Outlet"
+          className={field}
           value={v.brand}
           onChange={(e) => set("brand", e.target.value)}
-          className={field}
-        />
+        >
+          <option value="">— Сонгоно уу —</option>
+          {BRANDS.map((b) => (
+            <option key={b} value={b}>{b}</option>
+          ))}
+        </select>
       </label>
       <label className="block">
         <span className={lbl}>Ангилал</span>
