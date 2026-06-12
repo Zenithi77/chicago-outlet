@@ -4,7 +4,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { BRAND } from "@/lib/brand";
-import { CATEGORIES } from "@/lib/data/categories";
+import { BRANDS, CATEGORIES } from "@/lib/data/categories";
 import { PRODUCTS } from "@/lib/data/products";
 import { useCart } from "@/lib/store/cart";
 import { classNames, finalPrice, formatMNT } from "@/lib/utils";
@@ -45,14 +45,8 @@ const DEFAULT_ANNOUNCEMENTS = [
 
 export function Header({
   announcements,
-  subcategoriesByCategory,
-  subcategoriesByCategoryGender,
-  brands = [],
 }: {
   announcements?: string[];
-  subcategoriesByCategory?: Record<string, string[]>;
-  subcategoriesByCategoryGender?: Record<string, Record<string, string[]>>;
-  brands?: string[];
 } = {}) {
   const router = useRouter();
   const count = useCart((s) => s.count());
@@ -301,11 +295,10 @@ export function Header({
             "absolute inset-x-0 top-full hidden overflow-hidden bg-surface transition-all duration-300 md:block",
             (() => {
               if (!hovered) return false;
-              if (hovered === "brands") return brands.length > 0;
+              if (hovered === "brands") return true;
               const cat = CATEGORIES.find((c) => c.slug === hovered);
               if (!cat) return false;
-              const subs = subcategoriesByCategory?.[cat.name] ?? [];
-              return subs.length > 0;
+              return (cat.byGender && cat.byGender.length > 0) || (cat.children && cat.children.length > 0);
             })()
               ? "max-h-[32rem] border-b opacity-100 shadow-[0_24px_48px_-16px_rgba(0,0,0,0.18)]"
               : "pointer-events-none max-h-0 opacity-0"
@@ -318,15 +311,14 @@ export function Header({
           <div className="h-[2px] w-full bg-gradient-to-r from-transparent via-accent to-transparent" />
           <div className="container-page py-10">
             {(() => {
-              // Brands panel
+              // Brands panel — static
               if (hovered === "brands") {
-                if (brands.length === 0) return null;
                 return (
                   <div>
                     <div className="mb-5 flex items-center justify-between">
                       <div>
                         <h3 className="font-serif text-lg font-bold">Брэндүүд</h3>
-                        <p className="text-xs text-muted">{brands.length} брэнд</p>
+                        <p className="text-xs text-muted">{BRANDS.length} брэнд</p>
                       </div>
                       <Link
                         href="/shop?sort=brand"
@@ -337,14 +329,13 @@ export function Header({
                       </Link>
                     </div>
                     <div className="grid grid-cols-4 gap-3 lg:grid-cols-6">
-                      {brands.map((brand) => (
+                      {BRANDS.map((brand) => (
                         <Link
                           key={brand}
                           href={`/shop?brand=${encodeURIComponent(brand)}`}
-                          className="group relative overflow-hidden rounded-lg border border-transparent bg-background/50 p-4 text-sm font-medium transition-all duration-200 hover:-translate-y-0.5 hover:border-accent hover:bg-surface hover:shadow-md"
+                          className="group relative overflow-hidden rounded-lg border border-transparent bg-background/50 px-3 py-2.5 text-sm font-medium transition-all duration-200 hover:-translate-y-0.5 hover:border-accent hover:bg-surface hover:shadow-md"
                         >
-                          <span className="relative z-10">{brand}</span>
-                          <ChevronDown className="absolute right-3 top-1/2 z-10 -translate-y-1/2 -rotate-90 opacity-0 transition-all duration-200 group-hover:translate-x-1 group-hover:opacity-60" />
+                          {brand}
                         </Link>
                       ))}
                     </div>
@@ -354,26 +345,14 @@ export function Header({
 
               const cat = CATEGORIES.find((c) => c.slug === hovered);
               if (!cat) return null;
-              const subs = subcategoriesByCategory?.[cat.name] ?? [];
-              if (subs.length === 0) return null;
 
-              // "Хувцас" ангилал — Эрэгтэй / Эмэгтэй / Унисекс багана.
-              if (cat.slug === "huvtsas") {
-                const byGender = subcategoriesByCategoryGender?.[cat.name] ?? {};
-                const cols: { key: string; label: string; subs: string[] }[] = [
-                  { key: "men", label: "Эрэгтэй", subs: byGender["men"] ?? [] },
-                  { key: "women", label: "Эмэгтэй", subs: byGender["women"] ?? [] },
-                  { key: "unisex", label: "Унисекс", subs: byGender["unisex"] ?? [] },
-                ].filter((c) => c.subs.length > 0);
-
-                if (cols.length === 0) return null;
-
+              // Хувцас — gender columns from static byGender
+              if (cat.byGender && cat.byGender.length > 0) {
                 return (
                   <div>
                     <div className="mb-5 flex items-center justify-between">
                       <div>
                         <h3 className="font-serif text-lg font-bold">{cat.nameMn}</h3>
-                        <p className="text-xs text-muted">{subs.length} дэд ангилал</p>
                       </div>
                       <Link
                         href={`/shop?category=${encodeURIComponent(cat.name)}`}
@@ -386,12 +365,12 @@ export function Header({
                     <div
                       className={classNames(
                         "grid gap-10",
-                        cols.length === 1 && "grid-cols-1",
-                        cols.length === 2 && "grid-cols-2",
-                        cols.length === 3 && "grid-cols-3"
+                        cat.byGender.length === 1 && "grid-cols-1",
+                        cat.byGender.length === 2 && "grid-cols-2",
+                        cat.byGender.length === 3 && "grid-cols-3"
                       )}
                     >
-                      {cols.map((col) => (
+                      {cat.byGender.map((col) => (
                         <div key={col.key} className="group/col">
                           <Link
                             href={`/shop?category=${encodeURIComponent(cat.name)}&gender=${col.key}`}
@@ -421,14 +400,15 @@ export function Header({
                 );
               }
 
+              // Other categories — flat children grid
+              const children = cat.children ?? [];
+              if (children.length === 0) return null;
               return (
                 <div>
                   <div className="mb-5 flex items-center justify-between">
                     <div>
                       <h3 className="font-serif text-lg font-bold">{cat.nameMn}</h3>
-                      <p className="text-xs text-muted">
-                        {subs.length} дэд ангилал
-                      </p>
+                      <p className="text-xs text-muted">{children.length} дэд ангилал</p>
                     </div>
                     <Link
                       href={`/shop?category=${encodeURIComponent(cat.name)}`}
@@ -438,14 +418,14 @@ export function Header({
                       <ChevronDown className="-rotate-90 transition-transform group-hover:translate-x-1" />
                     </Link>
                   </div>
-                  <div className="grid grid-cols-4 gap-3">
-                    {subs.map((sub) => (
+                  <div className="grid grid-cols-3 gap-3 lg:grid-cols-4">
+                    {children.map((child) => (
                       <Link
-                        key={sub}
-                        href={`/shop?category=${encodeURIComponent(cat.name)}&subcategory=${encodeURIComponent(sub)}`}
+                        key={child.slug}
+                        href={`/shop?category=${encodeURIComponent(cat.name)}&subcategory=${encodeURIComponent(child.name)}`}
                         className="group relative overflow-hidden rounded-lg border border-transparent bg-background/50 p-4 text-sm font-medium transition-all duration-200 hover:-translate-y-0.5 hover:border-accent hover:bg-surface hover:shadow-md"
                       >
-                        <span className="relative z-10">{sub}</span>
+                        <span className="relative z-10">{child.nameMn}</span>
                         <ChevronDown className="absolute right-3 top-1/2 z-10 -translate-y-1/2 -rotate-90 opacity-0 transition-all duration-200 group-hover:translate-x-1 group-hover:opacity-60" />
                       </Link>
                     ))}

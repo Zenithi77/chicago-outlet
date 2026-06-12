@@ -941,20 +941,30 @@ function ProductForm({
 
       <label className="block">
         <span className={lbl}>Дэд ангилал</span>
-        <input
+        <select
           name="subcategory"
-          list="subcategory-suggestions"
-          placeholder="Жишээ: Футболк (шинээр бичээд оруулж болно)"
+          className={field}
           value={v.subcategory}
           onChange={(e) => set("subcategory", e.target.value)}
-          className={field}
-        />
-        <datalist id="subcategory-suggestions">
-          {/* Suggest predefined subcategories for the chosen top-level category. */}
-          {(CATEGORIES.find((c) => c.name === v.category)?.children ?? []).map((s) => (
-            <option key={s.slug} value={s.name} />
-          ))}
-        </datalist>
+        >
+          <option value="">— Сонгоно уу —</option>
+          {(() => {
+            const cat = CATEGORIES.find((c) => c.name === v.category);
+            if (!cat) return null;
+            if (cat.byGender) {
+              return cat.byGender.map((g) => (
+                <optgroup key={g.key} label={g.label}>
+                  {g.subs.map((s) => (
+                    <option key={s} value={s}>{s}</option>
+                  ))}
+                </optgroup>
+              ));
+            }
+            return (cat.children ?? []).map((s) => (
+              <option key={s.slug} value={s.name}>{s.nameMn}</option>
+            ));
+          })()}
+        </select>
       </label>
       {isApparel && (
         <label className="block">
