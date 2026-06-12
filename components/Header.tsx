@@ -400,15 +400,9 @@ export function Header({
                 );
               }
 
-              // Other categories — same column style as Хувцас byGender
+              // Other categories — same style as Хувцас, auto-wrap every 4 items
               const children = cat.children ?? [];
               if (children.length === 0) return null;
-              // Split into columns of up to 5 items each
-              const colSize = 5;
-              const cols: typeof children[] = [];
-              for (let i = 0; i < children.length; i += colSize) {
-                cols.push(children.slice(i, i + colSize));
-              }
               return (
                 <div>
                   <div className="mb-5 flex items-center justify-between">
@@ -421,33 +415,20 @@ export function Header({
                       <ChevronDown className="-rotate-90 transition-transform group-hover:translate-x-1" />
                     </Link>
                   </div>
-                  <div
-                    className={classNames(
-                      "grid gap-10",
-                      cols.length === 1 && "grid-cols-1",
-                      cols.length === 2 && "grid-cols-2",
-                      cols.length >= 3 && "grid-cols-3"
-                    )}
-                  >
-                    {cols.map((group, gi) => (
-                      <div key={gi} className="group/col">
-                        <div className="mb-3 h-px w-10 bg-accent" />
-                        <ul className="space-y-1.5">
-                          {group.map((child) => (
-                            <li key={child.slug}>
-                              <Link
-                                href={`/shop?category=${encodeURIComponent(cat.name)}&subcategory=${encodeURIComponent(child.name)}`}
-                                className="group/link inline-flex items-center gap-1.5 rounded-md py-1 text-[13px] text-muted transition-colors hover:text-foreground"
-                              >
-                                <span className="h-px w-0 bg-foreground transition-all duration-300 group-hover/link:w-4" />
-                                {child.nameMn}
-                              </Link>
-                            </li>
-                          ))}
-                        </ul>
-                      </div>
+                  <div className="mb-3 h-px w-10 bg-accent" />
+                  <ul className="grid grid-cols-4 gap-x-10 gap-y-0">
+                    {children.map((child) => (
+                      <li key={child.slug}>
+                        <Link
+                          href={`/shop?category=${encodeURIComponent(cat.name)}&subcategory=${encodeURIComponent(child.name)}`}
+                          className="group/link inline-flex items-center gap-1.5 rounded-md py-1 text-[13px] text-muted transition-colors hover:text-foreground"
+                        >
+                          <span className="h-px w-0 bg-foreground transition-all duration-300 group-hover/link:w-4" />
+                          {child.nameMn}
+                        </Link>
+                      </li>
                     ))}
-                  </div>
+                  </ul>
                 </div>
               );
             })()}
