@@ -392,7 +392,7 @@ export default function CheckoutPage() {
                     }}
                   />
                 </svg>
-                <CheckIcon className="h-10 w-10 text-foreground" style={{ animation: "fadeIn 0.4s 0.6s ease-out both" }} />
+                <CheckIcon className="h-10 w-10 text-foreground" />
               </div>
               <div style={{ animation: "fadeIn 0.5s 0.5s ease-out both", opacity: 0 }}>
                 <h2 className="font-serif text-3xl font-bold tracking-tight">Захиалга баталгаажлаа</h2>
