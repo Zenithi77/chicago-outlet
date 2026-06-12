@@ -41,6 +41,8 @@ export const useCart = create<CartState>()(
 
       addItem: (item) =>
         set((state) => {
+          const safeMax = Math.max(1, Number(item.maxStock) || MAX_QTY);
+          const safeQty = Math.max(1, Math.min(MAX_QTY, safeMax, item.qty || 1));
           const idx = state.items.findIndex(
             (i) =>
               key(i.productId, i.size, i.color) ===
@@ -50,18 +52,14 @@ export const useCart = create<CartState>()(
             const next = [...state.items];
             next[idx] = {
               ...next[idx],
-              qty: Math.min(
-                MAX_QTY,
-                next[idx].maxStock,
-                next[idx].qty + item.qty
-              ),
+              qty: Math.min(MAX_QTY, safeMax, next[idx].qty + safeQty),
             };
             return { items: next, isOpen: true };
           }
           return {
             items: [
               ...state.items,
-              { ...item, qty: Math.min(MAX_QTY, item.maxStock, item.qty) },
+              { ...item, maxStock: safeMax, qty: safeQty },
             ],
             isOpen: true,
           };

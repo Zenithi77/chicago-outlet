@@ -15,23 +15,36 @@ export function ProductCard({ product }: { product: Product }) {
   const fp = finalPrice(product);
   const soldOut = product.totalStock <= 0;
   const lowStock = product.totalStock > 0 && product.totalStock <= 5;
-  const color = product.colors[activeColor];
+  const color = product.colors[activeColor] ?? { name: "", hex: "#000000" };
   const seed = product.images[activeImg] ?? product.slug;
 
-  const quickAdd = () => {
+  const quickAdd = (e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
     if (soldOut) return;
+    // Pick first in-stock size if sizeStocks defined, else middle size, else empty
+    let chosenSize = "";
+    let chosenStock = product.totalStock;
+    if (product.sizeStocks && product.sizeStocks.length > 0) {
+      const inStock = product.sizeStocks.find((s) => s.stock > 0);
+      if (!inStock) return;
+      chosenSize = inStock.size;
+      chosenStock = inStock.stock;
+    } else if (product.sizes.length > 0) {
+      chosenSize = product.sizes[Math.floor(product.sizes.length / 2)] ?? product.sizes[0];
+    }
     addItem({
       productId: product.id,
       slug: product.slug,
       name: product.name,
       sku: product.id,
-      size: product.sizes[Math.floor(product.sizes.length / 2)] ?? "M",
+      size: chosenSize,
       color: color.name,
       colorHex: color.hex,
       qty: 1,
       unitPrice: fp,
       image: product.images[0] ?? product.slug,
-      maxStock: product.totalStock,
+      maxStock: Math.max(1, chosenStock),
     });
   };
 

@@ -84,19 +84,61 @@ export function Header({
 
   useEffect(() => setMounted(true), []);
 
-  // Live results as the visitor types.
-  const results = useMemo(() => {
-    const q = query.trim().toLowerCase();
-    if (!q) return [];
-    return PRODUCTS.filter((p) => p.isActive)
-      .filter((p) =>
-        [p.name, p.brand, p.category, p.subcategory, ...(p.tags ?? [])]
-          .join(" ")
-          .toLowerCase()
-          .includes(q)
-      )
-      .slice(0, 6);
+  // Smart live search — debounced fetch from Supabase via /api/search
+  type SearchHit = {
+    id: string;
+    slug: string;
+    name: string;
+    brand: string;
+    category: string;
+    subcategory: string;
+    finalPrice: number;
+    price: number;
+    discountPercent: number;
+    image: string;
+    soldOut: boolean;
+  };
+  const [results, setResults] = useState<SearchHit[]>([]);
+  const [searching, setSearching] = useState(false);
+
+  useEffect(() => {
+    const q = query.trim();
+    if (!q) {
+      setResults([]);
+      setSearching(false);
+      return;
+    }
+    setSearching(true);
+    const controller = new AbortController();
+    const timeout = setTimeout(async () => {
+      try {
+        const res = await fetch(`/api/search?q=${encodeURIComponent(q)}`, { signal: controller.signal });
+        const data = await res.json();
+        setResults(data.results ?? []);
+      } catch {
+        // ignored — likely aborted
+      } finally {
+        setSearching(false);
+      }
+    }, 180);
+    return () => {
+      controller.abort();
+      clearTimeout(timeout);
+    };
   }, [query]);
+
+  // Highlight matched text in product names
+  const highlight = (text: string, q: string) => {
+    if (!q.trim()) return text;
+    const parts = text.split(new RegExp(`(${q.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")})`, "gi"));
+    return parts.map((part, i) =>
+      part.toLowerCase() === q.toLowerCase() ? (
+        <mark key={i} className="bg-accent/40 text-foreground rounded px-0.5">{part}</mark>
+      ) : (
+        <span key={i}>{part}</span>
+      )
+    );
+  };
 
   const featured = useMemo(
     () => PRODUCTS.filter((p) => p.isActive && p.isFeatured).slice(0, 4),
@@ -536,7 +578,7 @@ export function Header({
                 </div>
               ) : results.length === 0 ? (
                 <p className="py-10 text-center text-sm text-muted">
-                  «{query}» — илэрц олдсонгүй.
+                  {searching ? "Хайж байна…" : `«${query}» — илэрц олдсонгүй.`}
                 </p>
               ) : (
                 <div className="space-y-1">
@@ -548,18 +590,19 @@ export function Header({
                       className="flex items-center gap-4 rounded-xl p-2 transition hover:bg-background"
                     >
                       <ProductImage
-                        seed={p.images[0]}
+                        seed={p.image}
                         label={p.name}
                         className="h-14 w-14 shrink-0 rounded-lg"
                       />
                       <div className="min-w-0 flex-1">
-                        <p className="truncate text-sm font-medium">{p.name}</p>
+                        <p className="truncate text-sm font-medium">{highlight(p.name, query)}</p>
                         <p className="truncate text-xs text-muted">
                           {p.brand} · {p.subcategory}
+                          {p.soldOut && <span className="ml-2 text-danger font-medium">Дууссан</span>}
                         </p>
                       </div>
                       <span className="shrink-0 text-sm font-semibold">
-                        {formatMNT(finalPrice(p))}
+                        {formatMNT(p.finalPrice)}
                       </span>
                     </Link>
                   ))}

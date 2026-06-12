@@ -97,9 +97,9 @@ export function ProductDetail({ product, isLoggedIn = false }: { product: Produc
         </nav>
       </div>
 
-      <div className="lg:container-page lg:grid lg:gap-10 lg:grid-cols-2 lg:pb-16">
+      <div className="lg:container-page lg:grid lg:gap-12 lg:grid-cols-[1.1fr_1fr] lg:pb-16 lg:pt-4">
         {/* Gallery */}
-        <div>
+        <div className="lg:sticky lg:top-24 lg:self-start">
           {/* Main image — edge-to-edge on mobile */}
           <div className="relative w-full overflow-hidden lg:rounded-xl">
             <ProductImage
@@ -275,40 +275,50 @@ export function ProductDetail({ product, isLoggedIn = false }: { product: Produc
           )}
 
           {/* Qty + actions — desktop only */}
-          <div className="mt-5 hidden flex-col gap-3 sm:flex-row sm:items-center lg:flex">
-            <div className="flex items-center rounded-md border">
-              <button onClick={() => setQty((q) => Math.max(1, q - 1))} className="px-4 py-3">−</button>
-              <span className="w-10 text-center">{qty}</span>
+          <div className="mt-6 hidden lg:block">
+            <div className="flex items-stretch gap-3">
+              <div className="flex items-center rounded-lg border bg-surface">
+                <button
+                  onClick={() => setQty((q) => Math.max(1, q - 1))}
+                  className="px-4 py-3 text-lg font-medium hover:bg-background"
+                  aria-label="Хасах"
+                >
+                  −
+                </button>
+                <span className="w-10 text-center font-semibold">{qty}</span>
+                <button
+                  onClick={() => setQty((q) => Math.min(10, Math.max(1, selectedSizeStock ?? product.totalStock), q + 1))}
+                  className="px-4 py-3 text-lg font-medium hover:bg-background"
+                  aria-label="Нэмэх"
+                >
+                  +
+                </button>
+              </div>
               <button
-                onClick={() => setQty((q) => Math.min(10, (selectedSizeStock ?? product.totalStock), q + 1))}
-                className="px-4 py-3"
+                onClick={() => add(false)}
+                disabled={soldOut}
+                className={classNames(
+                  "flex-1 rounded-lg py-3.5 text-sm font-semibold uppercase tracking-wider transition",
+                  soldOut
+                    ? "cursor-not-allowed bg-border text-muted"
+                    : "bg-foreground text-white hover:bg-accent hover:text-foreground"
+                )}
               >
-                +
+                {soldOut ? "Дууссан" : "Сагсанд нэмэх"}
+              </button>
+              <button
+                className="flex items-center rounded-lg border px-4 hover:border-foreground"
+                aria-label="Хадгалах"
+              >
+                <HeartIcon className="h-5 w-5" />
               </button>
             </div>
             <button
-              onClick={() => add(false)}
-              disabled={soldOut}
-              className={classNames(
-                "flex-1 rounded-md py-3.5 text-sm font-semibold uppercase tracking-wider transition",
-                soldOut
-                  ? "cursor-not-allowed bg-border text-muted"
-                  : "bg-foreground text-white hover:bg-accent hover:text-foreground"
-              )}
-            >
-              Сагсанд нэмэх
-            </button>
-          </div>
-          <div className="mt-3 hidden gap-3 lg:flex">
-            <button
               onClick={() => add(true)}
               disabled={soldOut}
-              className="flex-1 rounded-md border border-accent bg-accent py-3 text-sm font-semibold text-foreground hover:bg-accent-dark hover:text-white disabled:opacity-50"
+              className="mt-3 w-full rounded-lg border border-accent bg-accent py-3 text-sm font-semibold uppercase tracking-wider text-foreground transition hover:bg-accent-dark hover:text-white disabled:opacity-50"
             >
               Шууд авах
-            </button>
-            <button className="flex items-center rounded-md border px-4 hover:border-foreground" aria-label="Хадгалах">
-              <HeartIcon className="h-5 w-5" />
             </button>
           </div>
 
@@ -408,7 +418,7 @@ export function ProductDetail({ product, isLoggedIn = false }: { product: Produc
                 </button>
                 <span className="w-8 text-center text-sm font-semibold">{qty}</span>
                 <button
-                  onClick={() => setQty((q) => Math.min(10, (selectedSizeStock ?? product.totalStock), q + 1))}
+                  onClick={() => setQty((q) => Math.min(10, Math.max(1, selectedSizeStock ?? product.totalStock), q + 1))}
                   className="px-3 py-2.5 text-lg font-medium leading-none"
                 >
                   +
