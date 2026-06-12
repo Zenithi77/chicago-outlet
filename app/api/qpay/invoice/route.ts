@@ -70,6 +70,7 @@ export async function POST(request: Request) {
   const { error: insertErr } = await admin.from("orders").upsert(
     {
       id: orderId,
+      user_id: userId,
       customer_name: body.customer.name,
       customer_email: body.customer.email,
       customer_phone: body.customer.phone,
@@ -89,6 +90,25 @@ export async function POST(request: Request) {
 
   if (insertErr) {
     return NextResponse.json({ error: `Захиалга хадгалах алдаа: ${insertErr.message}` }, { status: 500 });
+  }
+
+  // Insert order items (delete existing first to avoid duplicates on retry)
+  await admin.from("order_items").delete().eq("order_id", orderId);
+  const itemRows = items.map((i) => ({
+    order_id: orderId,
+    product_id: i.productId,
+    product_name: i.productName,
+    sku: i.sku ?? null,
+    size: i.size ?? null,
+    color: i.color ?? null,
+    qty: i.qty,
+    unit_price: Math.round(i.unitPrice),
+    subtotal: Math.round(i.unitPrice * i.qty),
+    image: i.image ?? null,
+  }));
+  const { error: itemErr } = await admin.from("order_items").insert(itemRows);
+  if (itemErr) {
+    return NextResponse.json({ error: `Захиалгын барааг хадгалах алдаа: ${itemErr.message}` }, { status: 500 });
   }
 
   const site = process.env.NEXT_PUBLIC_SITE_URL ?? request.headers.get("origin") ?? "";

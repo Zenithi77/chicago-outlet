@@ -25,7 +25,7 @@ async function handle(orderId: string | null) {
   const paid = (check.rows ?? []).some((r) => r.payment_status === "PAID");
   if (!paid) return { ok: true, paid: false };
 
-  await admin
+  const { error: updateErr } = await admin
     .from("orders")
     .update({
       payment_status: "paid",
@@ -35,6 +35,53 @@ async function handle(orderId: string | null) {
     })
     .eq("id", orderId)
     .neq("payment_status", "paid");
+
+  if (!updateErr) {
+    // Decrement stock for each order item
+    const { data: orderItems } = await admin
+      .from("order_items")
+      .select("product_id, size, qty")
+      .eq("order_id", orderId);
+
+    if (orderItems && orderItems.length > 0) {
+      for (const item of orderItems) {
+        if (!item.product_id) continue;
+
+        // Fetch current product stock
+        const { data: product } = await admin
+          .from("products")
+          .select("total_stock, size_stocks")
+          .eq("id", item.product_id)
+          .single();
+
+        if (!product) continue;
+
+        const sizeStocks: { size: string; stock: number }[] = (product.size_stocks as { size: string; stock: number }[]) ?? [];
+
+        let newSizeStocks = sizeStocks;
+        if (item.size && sizeStocks.length > 0) {
+          // Decrement the specific size's stock
+          newSizeStocks = sizeStocks.map((ss) =>
+            ss.size === item.size
+              ? { ...ss, stock: Math.max(0, ss.stock - item.qty) }
+              : ss
+          );
+        }
+
+        const newTotalStock = newSizeStocks.length > 0
+          ? newSizeStocks.reduce((sum, ss) => sum + ss.stock, 0)
+          : Math.max(0, (product.total_stock ?? 0) - item.qty);
+
+        await admin
+          .from("products")
+          .update({
+            size_stocks: newSizeStocks,
+            total_stock: newTotalStock,
+          })
+          .eq("id", item.product_id);
+      }
+    }
+  }
 
   return { ok: true, paid: true };
 }
