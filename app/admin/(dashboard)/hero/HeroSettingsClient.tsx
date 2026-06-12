@@ -4,6 +4,7 @@ import { useRef, useState, useTransition } from "react";
 import { saveHeroUrl, saveSetting, saveSettings, type HeroKey } from "./actions";
 import { UploadIcon, CloseIcon } from "@/components/Icons";
 import { classNames } from "@/lib/utils";
+import { CATEGORIES, BRANDS } from "@/lib/data/categories";
 
 const SLOTS: { key: HeroKey; label: string; sub: string }[] = [
   { key: "hero_park_od", label: "Park-Od Mall", sub: "Дэлгүүрийн зураг" },
@@ -479,14 +480,8 @@ function PromoBannerSection({
                 className="w-full rounded-md border px-3 py-2 text-sm outline-none focus:ring-1 focus:ring-accent"
               />
             </FieldRow>
-            <FieldRow label="Товчны линк (URL)">
-              <input
-                type="text"
-                value={values.cta_href}
-                onChange={(e) => set("cta_href", e.target.value)}
-                placeholder="/shop?gender=sale"
-                className="w-full rounded-md border px-3 py-2 text-sm outline-none focus:ring-1 focus:ring-accent"
-              />
+            <FieldRow label="Товчны линк">
+              <LinkPicker value={values.cta_href} onChange={(v) => set("cta_href", v)} />
             </FieldRow>
           </div>
 
@@ -551,6 +546,176 @@ function FieldRow({ label, children }: { label: string; children: React.ReactNod
     <div>
       <label className="mb-1 block text-xs font-medium text-muted">{label}</label>
       {children}
+    </div>
+  );
+}
+
+/* --------------------------------------------------------------------- */
+/* Smart link picker for promo banner CTA                                 */
+/* --------------------------------------------------------------------- */
+type LinkMode = "custom" | "shop" | "sale" | "category" | "subcategory" | "gender" | "brand";
+
+function buildHref(mode: LinkMode, cat: string, sub: string, gender: string, brand: string): string {
+  if (mode === "shop") return "/shop";
+  if (mode === "sale") return "/shop?sale=true";
+  if (mode === "category") return cat ? `/shop?category=${cat}` : "/shop";
+  if (mode === "subcategory") return cat && sub ? `/shop?category=${cat}&sub=${sub}` : "/shop";
+  if (mode === "gender") return cat && gender ? `/shop?category=${cat}&gender=${gender}` : "/shop";
+  if (mode === "brand") return brand ? `/shop?brand=${encodeURIComponent(brand)}` : "/shop";
+  return "";
+}
+
+function detectMode(href: string): { mode: LinkMode; cat: string; sub: string; gender: string; brand: string } {
+  try {
+    const u = new URL(href, "http://x");
+    const cat = u.searchParams.get("category") ?? "";
+    const sub = u.searchParams.get("sub") ?? "";
+    const gender = u.searchParams.get("gender") ?? "";
+    const brand = u.searchParams.get("brand") ?? "";
+    const sale = u.searchParams.get("sale");
+    if (sale === "true") return { mode: "sale", cat, sub, gender, brand };
+    if (brand) return { mode: "brand", cat, sub, gender, brand };
+    if (gender && cat) return { mode: "gender", cat, sub, gender, brand };
+    if (sub && cat) return { mode: "subcategory", cat, sub, gender, brand };
+    if (cat) return { mode: "category", cat, sub, gender, brand };
+    if (u.pathname === "/shop") return { mode: "shop", cat, sub, gender, brand };
+  } catch { /* ignore */ }
+  return { mode: "custom", cat: "", sub: "", gender: "", brand: "" };
+}
+
+function LinkPicker({ value, onChange }: { value: string; onChange: (v: string) => void }) {
+  const parsed = detectMode(value);
+  const [mode, setMode] = useState<LinkMode>(parsed.mode);
+  const [cat, setCat] = useState(parsed.cat);
+  const [sub, setSub] = useState(parsed.sub);
+  const [gender, setGender] = useState(parsed.gender);
+  const [brand, setBrand] = useState(parsed.brand);
+
+  const emit = (m: LinkMode, c = cat, s = sub, g = gender, b = brand) => {
+    if (m === "custom") return; // user edits directly
+    onChange(buildHref(m, c, s, g, b));
+  };
+
+  const changeMode = (m: LinkMode) => {
+    setMode(m);
+    emit(m, cat, sub, gender, brand);
+  };
+
+  const selectedCat = CATEGORIES.find((c) => c.slug === cat);
+  const subOptions = selectedCat?.children ?? [];
+  const genderOptions = selectedCat?.byGender ?? [];
+  const hasGender = genderOptions.length > 0;
+  const hasChildren = subOptions.length > 0;
+
+  return (
+    <div className="space-y-2">
+      <select
+        value={mode}
+        onChange={(e) => changeMode(e.target.value as LinkMode)}
+        className="w-full rounded-md border px-3 py-2 text-sm outline-none focus:ring-1 focus:ring-accent"
+      >
+        <option value="shop">Дэлгүүр (/shop)</option>
+        <option value="sale">Хямдрал (/shop?sale=true)</option>
+        <option value="category">Категори</option>
+        <option value="subcategory">Дэд категори</option>
+        <option value="gender">Хүйсийн ангилал (Хувцас)</option>
+        <option value="brand">Брэнд</option>
+        <option value="custom">Захиалгат URL</option>
+      </select>
+
+      {mode === "category" && (
+        <select
+          value={cat}
+          onChange={(e) => { setCat(e.target.value); setSub(""); setGender(""); emit("category", e.target.value, "", ""); }}
+          className="w-full rounded-md border px-3 py-2 text-sm outline-none focus:ring-1 focus:ring-accent"
+        >
+          <option value="">— категори сонгох —</option>
+          {CATEGORIES.map((c) => (
+            <option key={c.slug} value={c.slug}>{c.nameMn}</option>
+          ))}
+        </select>
+      )}
+
+      {mode === "subcategory" && (
+        <>
+          <select
+            value={cat}
+            onChange={(e) => { setCat(e.target.value); setSub(""); emit("subcategory", e.target.value, ""); }}
+            className="w-full rounded-md border px-3 py-2 text-sm outline-none focus:ring-1 focus:ring-accent"
+          >
+            <option value="">— категори сонгох —</option>
+            {CATEGORIES.filter((c) => c.children && c.children.length > 0).map((c) => (
+              <option key={c.slug} value={c.slug}>{c.nameMn}</option>
+            ))}
+          </select>
+          {subOptions.length > 0 && (
+            <select
+              value={sub}
+              onChange={(e) => { setSub(e.target.value); emit("subcategory", cat, e.target.value); }}
+              className="w-full rounded-md border px-3 py-2 text-sm outline-none focus:ring-1 focus:ring-accent"
+            >
+              <option value="">— дэд категори сонгох —</option>
+              {subOptions.map((s) => (
+                <option key={s.slug} value={s.slug}>{s.nameMn}</option>
+              ))}
+            </select>
+          )}
+        </>
+      )}
+
+      {mode === "gender" && (
+        <>
+          <select
+            value={cat}
+            onChange={(e) => { setCat(e.target.value); setGender(""); emit("gender", e.target.value, "", ""); }}
+            className="w-full rounded-md border px-3 py-2 text-sm outline-none focus:ring-1 focus:ring-accent"
+          >
+            <option value="">— категори сонгох —</option>
+            {CATEGORIES.filter((c) => c.byGender && c.byGender.length > 0).map((c) => (
+              <option key={c.slug} value={c.slug}>{c.nameMn}</option>
+            ))}
+          </select>
+          {genderOptions.length > 0 && (
+            <select
+              value={gender}
+              onChange={(e) => { setGender(e.target.value); emit("gender", cat, sub, e.target.value); }}
+              className="w-full rounded-md border px-3 py-2 text-sm outline-none focus:ring-1 focus:ring-accent"
+            >
+              <option value="">— хүйс сонгох —</option>
+              {genderOptions.map((g) => (
+                <option key={g.key} value={g.key}>{g.label}</option>
+              ))}
+            </select>
+          )}
+        </>
+      )}
+
+      {mode === "brand" && (
+        <select
+          value={brand}
+          onChange={(e) => { setBrand(e.target.value); emit("brand", cat, sub, gender, e.target.value); }}
+          className="w-full rounded-md border px-3 py-2 text-sm outline-none focus:ring-1 focus:ring-accent"
+        >
+          <option value="">— брэнд сонгох —</option>
+          {BRANDS.map((b) => (
+            <option key={b} value={b}>{b}</option>
+          ))}
+        </select>
+      )}
+
+      {mode === "custom" && (
+        <input
+          type="text"
+          value={value}
+          onChange={(e) => onChange(e.target.value)}
+          placeholder="/shop?gender=women"
+          className="w-full rounded-md border px-3 py-2 text-sm outline-none focus:ring-1 focus:ring-accent"
+        />
+      )}
+
+      <p className="text-[11px] text-muted">
+        URL: <span className="font-mono">{value || "—"}</span>
+      </p>
     </div>
   );
 }
