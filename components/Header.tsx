@@ -145,15 +145,6 @@ export function Header({
 
   return (
     <header className="sticky top-0 z-40">
-      {/* Announcement bar */}
-      <div className="bg-foreground text-white">
-        <div className="container-page flex h-8 items-center justify-center overflow-hidden text-[11px] font-medium uppercase tracking-[0.18em]">
-          <span key={announce} className="animate-fade-up text-center text-white/90">
-            {ANNOUNCEMENTS[announce]}
-          </span>
-        </div>
-      </div>
-
       {/* Main bar — double row on desktop */}
       <div
         className={classNames(
@@ -185,23 +176,13 @@ export function Header({
           >
             <span
               className="block font-serif text-[1.25rem] font-bold tracking-[0.18em] md:text-[1.75rem]"
-              style={{
-                background: "linear-gradient(90deg, #B22234 0%, #B22234 40%, #3C3B6E 60%, #3C3B6E 100%)",
-                WebkitBackgroundClip: "text",
-                WebkitTextFillColor: "transparent",
-                backgroundClip: "text",
-              }}
+              style={{ color: "#B22234" }}
             >
               CHICAGO
             </span>
             <span
-              className="-mt-0.5 block text-[10.8px] font-semibold uppercase tracking-[0.5em] md:text-[12px]"
-              style={{
-                background: "linear-gradient(90deg, #B22234 0%, #B22234 40%, #3C3B6E 60%, #3C3B6E 100%)",
-                WebkitBackgroundClip: "text",
-                WebkitTextFillColor: "transparent",
-                backgroundClip: "text",
-              }}
+              className="mt-1 block text-[13px] font-semibold uppercase tracking-[0.5em] md:text-[14.4px]"
+              style={{ color: "#B22234" }}
             >
               Outlet
             </span>

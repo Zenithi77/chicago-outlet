@@ -174,15 +174,6 @@ export function HeroSettingsClient({
         </div>
       </section>
 
-      {/* === Section 2: Top announcement bar === */}
-      <AnnouncementSection
-        initial={{
-          announcement_1: settings.announcement_1 ?? "",
-          announcement_2: settings.announcement_2 ?? "",
-          announcement_3: settings.announcement_3 ?? "",
-        }}
-      />
-
       {/* === Section 3: Two promotional banners === */}
       <PromoBannerSection
         index={1}

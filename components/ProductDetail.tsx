@@ -1,6 +1,7 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
+import { createPortal } from "react-dom";
 import Link from "next/link";
 import type { Product } from "@/lib/types";
 import { finalPrice, savings, formatMNT, classNames } from "@/lib/utils";
@@ -21,6 +22,9 @@ export function ProductDetail({ product }: { product: Product }) {
   const [imgIdx, setImgIdx] = useState(0);
   const [tab, setTab] = useState(0);
   const [error, setError] = useState("");
+
+  const [mounted, setMounted] = useState(false);
+  useEffect(() => setMounted(true), []);
 
   const fp = finalPrice(product);
   const save = savings(product);
@@ -283,51 +287,50 @@ export function ProductDetail({ product }: { product: Product }) {
         </div>
       </div>
 
-      {/* Sticky mobile footer */}
-      <div className="fixed bottom-0 inset-x-0 z-50 border-t bg-surface/95 backdrop-blur-sm px-4 py-3 lg:hidden" style={{position:'fixed',bottom:0,left:0,right:0}}>
-        <div className="flex items-center gap-3">
-          {/* Qty */}
-          <div className="flex items-center rounded-lg border bg-background">
-            <button
-              onClick={() => setQty((q) => Math.max(1, q - 1))}
-              className="px-3 py-2.5 text-lg font-medium leading-none"
-            >
-              −
-            </button>
-            <span className="w-8 text-center text-sm font-semibold">{qty}</span>
-            <button
-              onClick={() => setQty((q) => Math.min(10, product.totalStock, q + 1))}
-              className="px-3 py-2.5 text-lg font-medium leading-none"
-            >
-              +
-            </button>
-          </div>
-          {/* Add to cart */}
-          <button
-            onClick={() => add(false)}
-            disabled={soldOut}
-            className={classNames(
-              "flex-1 rounded-lg py-3 text-sm font-semibold uppercase tracking-wider transition",
-              soldOut
-                ? "cursor-not-allowed bg-border text-muted"
-                : "bg-foreground text-white"
-            )}
-          >
-            {soldOut ? "Дууссан" : "Сагсанд нэмэх"}
-          </button>
-          {/* Buy now */}
-          <button
-            onClick={() => add(true)}
-            disabled={soldOut}
-            className="rounded-lg border border-accent bg-accent px-4 py-3 text-sm font-semibold text-foreground disabled:opacity-40"
-          >
-            Авах
-          </button>
-        </div>
-        {error && <p className="mt-1.5 text-center text-xs text-danger">{error}</p>}
-      </div>
       {/* Bottom padding so sticky footer doesn't cover content on mobile */}
       <div className="h-20 lg:hidden" />
+
+      {/* Sticky mobile footer — rendered in body via portal to avoid transform/overflow issues */}
+      {mounted && createPortal(
+        <div className="fixed bottom-0 left-0 right-0 z-[999] border-t bg-white/95 backdrop-blur-sm px-4 py-3 lg:hidden">
+          <div className="flex items-center gap-3">
+            <div className="flex items-center rounded-lg border bg-gray-50">
+              <button
+                onClick={() => setQty((q) => Math.max(1, q - 1))}
+                className="px-3 py-2.5 text-lg font-medium leading-none"
+              >
+                −
+              </button>
+              <span className="w-8 text-center text-sm font-semibold">{qty}</span>
+              <button
+                onClick={() => setQty((q) => Math.min(10, product.totalStock, q + 1))}
+                className="px-3 py-2.5 text-lg font-medium leading-none"
+              >
+                +
+              </button>
+            </div>
+            <button
+              onClick={() => add(false)}
+              disabled={soldOut}
+              className={classNames(
+                "flex-1 rounded-lg py-3 text-sm font-semibold uppercase tracking-wider transition",
+                soldOut ? "cursor-not-allowed bg-gray-200 text-gray-400" : "bg-[#1A1A1A] text-white"
+              )}
+            >
+              {soldOut ? "Дууссан" : "Сагсанд нэмэх"}
+            </button>
+            <button
+              onClick={() => add(true)}
+              disabled={soldOut}
+              className="rounded-lg border border-[#C8A96E] bg-[#C8A96E] px-4 py-3 text-sm font-semibold text-[#1A1A1A] disabled:opacity-40"
+            >
+              Авах
+            </button>
+          </div>
+          {error && <p className="mt-1.5 text-center text-xs text-red-500">{error}</p>}
+        </div>,
+        document.body
+      )}
     </div>
   );
 }
