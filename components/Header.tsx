@@ -599,23 +599,13 @@ export function Header({
             <div>
               <p
                 className="font-serif text-xl font-bold tracking-[0.14em]"
-                style={{
-                  background: "linear-gradient(90deg, #B22234 0%, #B22234 40%, #3C3B6E 60%, #3C3B6E 100%)",
-                  WebkitBackgroundClip: "text",
-                  WebkitTextFillColor: "transparent",
-                  backgroundClip: "text",
-                }}
+                style={{ color: "#B22234" }}
               >
                 CHICAGO
               </p>
               <p
                 className="-mt-1 text-[10px] font-semibold uppercase tracking-[0.42em]"
-                style={{
-                  background: "linear-gradient(90deg, #B22234 0%, #B22234 40%, #3C3B6E 60%, #3C3B6E 100%)",
-                  WebkitBackgroundClip: "text",
-                  WebkitTextFillColor: "transparent",
-                  backgroundClip: "text",
-                }}
+                style={{ color: "#B22234" }}
               >
                 Outlet
               </p>
@@ -674,31 +664,7 @@ export function Header({
             </div>
           </div>
 
-          {/* Mobile: subcategories per top-level category */}
-          <div className="px-5 pb-6 pt-6">
-            <p className="mb-3 text-[10px] font-semibold uppercase tracking-[0.3em] text-muted">Дэд ангилал</p>
-            <div className="space-y-4">
-              {CATEGORIES.map((c) => (
-                <div key={c.slug}>
-                  <p className="mb-1.5 text-[11px] font-semibold uppercase tracking-wider text-muted">
-                    {c.nameMn}
-                  </p>
-                  <div className="grid grid-cols-2 gap-2">
-                    {c.children?.map((sub) => (
-                      <Link
-                        key={sub.slug}
-                        href={`/shop?category=${encodeURIComponent(c.name)}&subcategory=${encodeURIComponent(sub.name)}`}
-                        onClick={() => setMenuOpen(false)}
-                        className="rounded-xl border border-black/5 bg-background px-3 py-2 text-[13px] font-medium text-foreground/80 transition hover:border-foreground hover:text-foreground"
-                      >
-                        {sub.nameMn}
-                      </Link>
-                    ))}
-                  </div>
-                </div>
-              ))}
-            </div>
-          </div>
+          {/* Mobile: subcategories removed */}
         </div>
 
         {/* Footer actions removed: account & cart already in main header */}

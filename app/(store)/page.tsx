@@ -105,15 +105,17 @@ export default async function HomePage() {
             <Link
               key={c.label}
               href={c.href}
-              className="group relative aspect-[3/4] overflow-hidden rounded-lg"
+              className="group overflow-hidden rounded-lg"
             >
-              <ProductImage seed={c.seed} label={c.label} className="h-full w-full transition-transform duration-500 group-hover:scale-105" />
-              <div className="absolute inset-0 bg-black/30 transition group-hover:bg-black/45" />
-              <div className="absolute bottom-4 left-4">
-                <span className="block font-serif text-xl font-semibold text-white">
+              <div className="relative aspect-[3/4] overflow-hidden rounded-lg">
+                <ProductImage seed={c.seed} label={c.label} className="h-full w-full transition-transform duration-500 group-hover:scale-105" />
+                <div className="absolute inset-0 bg-black/10 transition group-hover:bg-black/25" />
+              </div>
+              <div className="px-1 pt-2 pb-1">
+                <span className="block font-serif text-sm font-semibold text-foreground leading-tight">
                   {c.label}
                 </span>
-                <span className="block text-xs text-white/70 mt-0.5">{c.sub}</span>
+                <span className="block text-[11px] text-muted mt-0.5 leading-tight">{c.sub}</span>
               </div>
             </Link>
           ))}
