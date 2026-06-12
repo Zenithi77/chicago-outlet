@@ -400,16 +400,19 @@ export function Header({
                 );
               }
 
-              // Other categories — flat children grid
+              // Other categories — same column style as Хувцас byGender
               const children = cat.children ?? [];
               if (children.length === 0) return null;
+              // Split into columns of up to 5 items each
+              const colSize = 5;
+              const cols: typeof children[] = [];
+              for (let i = 0; i < children.length; i += colSize) {
+                cols.push(children.slice(i, i + colSize));
+              }
               return (
                 <div>
                   <div className="mb-5 flex items-center justify-between">
-                    <div>
-                      <h3 className="font-serif text-lg font-bold">{cat.nameMn}</h3>
-                      <p className="text-xs text-muted">{children.length} дэд ангилал</p>
-                    </div>
+                    <h3 className="font-serif text-lg font-bold">{cat.nameMn}</h3>
                     <Link
                       href={`/shop?category=${encodeURIComponent(cat.name)}`}
                       className="group inline-flex items-center gap-1.5 text-xs font-semibold uppercase tracking-wider text-accent-dark"
@@ -418,16 +421,31 @@ export function Header({
                       <ChevronDown className="-rotate-90 transition-transform group-hover:translate-x-1" />
                     </Link>
                   </div>
-                  <div className="grid grid-cols-3 gap-3 lg:grid-cols-4">
-                    {children.map((child) => (
-                      <Link
-                        key={child.slug}
-                        href={`/shop?category=${encodeURIComponent(cat.name)}&subcategory=${encodeURIComponent(child.name)}`}
-                        className="group relative overflow-hidden rounded-lg border border-transparent bg-background/50 p-4 text-sm font-medium transition-all duration-200 hover:-translate-y-0.5 hover:border-accent hover:bg-surface hover:shadow-md"
-                      >
-                        <span className="relative z-10">{child.nameMn}</span>
-                        <ChevronDown className="absolute right-3 top-1/2 z-10 -translate-y-1/2 -rotate-90 opacity-0 transition-all duration-200 group-hover:translate-x-1 group-hover:opacity-60" />
-                      </Link>
+                  <div
+                    className={classNames(
+                      "grid gap-10",
+                      cols.length === 1 && "grid-cols-1",
+                      cols.length === 2 && "grid-cols-2",
+                      cols.length >= 3 && "grid-cols-3"
+                    )}
+                  >
+                    {cols.map((group, gi) => (
+                      <div key={gi} className="group/col">
+                        <div className="mb-3 h-px w-10 bg-accent" />
+                        <ul className="space-y-1.5">
+                          {group.map((child) => (
+                            <li key={child.slug}>
+                              <Link
+                                href={`/shop?category=${encodeURIComponent(cat.name)}&subcategory=${encodeURIComponent(child.name)}`}
+                                className="group/link inline-flex items-center gap-1.5 rounded-md py-1 text-[13px] text-muted transition-colors hover:text-foreground"
+                              >
+                                <span className="h-px w-0 bg-foreground transition-all duration-300 group-hover/link:w-4" />
+                                {child.nameMn}
+                              </Link>
+                            </li>
+                          ))}
+                        </ul>
+                      </div>
                     ))}
                   </div>
                 </div>
