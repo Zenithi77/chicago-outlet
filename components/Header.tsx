@@ -195,7 +195,7 @@ export function Header({
               CHICAGO
             </span>
             <span
-              className="-mt-1 block text-[9px] font-semibold uppercase tracking-[0.5em] md:text-[10px]"
+              className="-mt-0.5 block text-[10.8px] font-semibold uppercase tracking-[0.5em] md:text-[12px]"
               style={{
                 background: "linear-gradient(90deg, #B22234 0%, #B22234 40%, #3C3B6E 60%, #3C3B6E 100%)",
                 WebkitBackgroundClip: "text",
