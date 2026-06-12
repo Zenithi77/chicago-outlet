@@ -7,7 +7,7 @@ import { finalPrice, savings, formatMNT, classNames } from "@/lib/utils";
 import { useCart } from "@/lib/store/cart";
 import { ProductImage } from "@/components/ProductImage";
 import { Badge } from "@/components/Badge";
-import { StarIcon, HeartIcon } from "@/components/Icons";
+import { HeartIcon } from "@/components/Icons";
 
 const TABS = ["Тайлбар", "Хэмжээний заавар", "Материал & Арчилгаа"];
 
@@ -130,14 +130,7 @@ export function ProductDetail({ product }: { product: Product }) {
           <h1 className="mt-1.5 font-serif text-xl font-bold leading-snug md:text-2xl lg:text-3xl">{product.name}</h1>
           <p className="mt-1 text-xs text-muted">SKU: {product.id}</p>
 
-          <div className="mt-2 flex items-center gap-2 text-sm">
-            <span className="flex items-center gap-1 text-accent-dark">
-              <StarIcon className="h-4 w-4" /> {product.rating.toFixed(1)}
-            </span>
-            <span className="text-muted">({product.reviewCount} сэтгэгдэл)</span>
-          </div>
-
-          <div className="mt-4 flex items-baseline gap-3">
+          <div className="mt-3 flex items-baseline gap-3">
             <span className="text-2xl font-bold">{formatMNT(fp)}</span>
             {product.discountPercent > 0 && (
               <>

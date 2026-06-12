@@ -95,14 +95,22 @@ export async function createProduct(
 
   let slug = String(formData.get("slug") ?? "").trim() || slugify(name);
 
-  // Generate a SKU if none provided: CO-<year>-<NNNN>.
+  // Generate a unique SKU if none provided.
   let sku = String(formData.get("sku") ?? "").trim();
   if (!sku) {
-    const { count } = await supabase
+    const rand = Math.random().toString(36).slice(2, 6).toUpperCase();
+    sku = `CO-${new Date().getFullYear()}-${Date.now().toString().slice(-5)}${rand}`;
+  } else {
+    // Check if provided SKU already exists
+    const { data: existingSku } = await supabase
       .from("products")
-      .select("*", { count: "exact", head: true });
-    const seq = String((count ?? 0) + 1).padStart(4, "0");
-    sku = `CO-${new Date().getFullYear()}-${seq}`;
+      .select("sku")
+      .eq("sku", sku)
+      .maybeSingle();
+    if (existingSku) {
+      const rand = Math.random().toString(36).slice(2, 6).toUpperCase();
+      sku = `${sku}-${rand}`;
+    }
   }
   // Avoid slug collisions.
   const { data: existingSlug } = await supabase

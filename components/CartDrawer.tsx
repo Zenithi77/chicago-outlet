@@ -10,7 +10,6 @@ import { CloseIcon, BagIcon } from "./Icons";
 export function CartDrawer() {
   const { items, isOpen, setOpen, updateQty, removeItem } = useCart();
   const subtotal = useCart((s) => s.subtotal());
-  const remaining = BRAND.freeShippingThreshold - subtotal;
 
   return (
     <>
@@ -37,15 +36,6 @@ export function CartDrawer() {
           </button>
         </div>
 
-        {subtotal > 0 && remaining > 0 && (
-          <div className="border-b bg-background px-5 py-2 text-xs">
-            Үнэгүй хүргэлт хүртэл{" "}
-            <span className="font-semibold text-accent-dark">
-              {formatMNT(remaining)}
-            </span>{" "}
-            үлдлээ.
-          </div>
-        )}
 
         <div className="flex-1 overflow-y-auto px-5">
           {items.length === 0 ? (
