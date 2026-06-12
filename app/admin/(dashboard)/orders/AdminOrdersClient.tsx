@@ -197,38 +197,43 @@ export function AdminOrdersClient({ initialOrders }: { initialOrders: Order[] })
             </div>
 
             {/* Items */}
-            <table className="mt-4 w-full text-sm">
-              <thead className="text-left text-xs uppercase text-muted">
-                <tr>
-                  <th className="pb-2">Бараа</th>
-                  <th className="pb-2 text-center">Тоо</th>
-                  <th className="pb-2 text-right">Дүн</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y">
-                {selected.items.map((i, idx) => (
-                  <tr key={idx}>
-                    <td className="py-2">
-                      <div className="flex items-center gap-2">
-                        {i.image && (
-                          <div className="h-10 w-9 shrink-0 overflow-hidden rounded border">
-                            <ProductImage seed={i.image} label={i.productName} className="h-full w-full" />
-                          </div>
-                        )}
-                        <div>
-                          {i.productName}
-                          <span className="block text-xs text-muted">
-                            {[i.color, i.size].filter(Boolean).join(" / ")}
-                          </span>
-                        </div>
-                      </div>
-                    </td>
-                    <td className="py-2 text-center">{i.qty}</td>
-                    <td className="py-2 text-right">{formatMNT(i.subtotal)}</td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
+            <div className="mt-4 space-y-2">
+              <p className="text-xs font-semibold uppercase tracking-wide text-muted">
+                Захиалсан бараанууд ({selected.items.reduce((n, i) => n + i.qty, 0)} ширхэг)
+              </p>
+              {selected.items.map((i, idx) => (
+                <div key={idx} className="flex items-center gap-3 rounded-lg border bg-background p-3">
+                  {i.image && (
+                    <div className="h-16 w-14 shrink-0 overflow-hidden rounded-md border">
+                      <ProductImage seed={i.image} label={i.productName} className="h-full w-full object-cover" />
+                    </div>
+                  )}
+                  <div className="flex-1 min-w-0">
+                    <p className="font-medium text-sm leading-snug">{i.productName}</p>
+                    <p className="text-xs font-mono text-muted mt-0.5">{i.sku}</p>
+                    <div className="mt-1 flex flex-wrap gap-1">
+                      {i.size && (
+                        <span className="rounded bg-foreground/10 px-2 py-0.5 text-[11px] font-semibold">
+                          Хэмжээ: {i.size}
+                        </span>
+                      )}
+                      {i.color && (
+                        <span className="rounded bg-foreground/10 px-2 py-0.5 text-[11px] font-semibold">
+                          Өнгө: {i.color}
+                        </span>
+                      )}
+                      <span className="rounded bg-accent/20 px-2 py-0.5 text-[11px] font-semibold text-accent-dark">
+                        × {i.qty} ширхэг
+                      </span>
+                    </div>
+                  </div>
+                  <div className="shrink-0 text-right">
+                    <p className="text-sm font-bold">{formatMNT(i.subtotal)}</p>
+                    <p className="text-[11px] text-muted">{formatMNT(i.unitPrice)} / ш</p>
+                  </div>
+                </div>
+              ))}
+            </div>
 
             {/* Totals */}
             <div className="mt-4 space-y-1 border-t pt-3 text-sm">

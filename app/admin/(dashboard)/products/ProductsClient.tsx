@@ -74,7 +74,7 @@ export type ProductRow = {
   season: string;
   tags: string[];
   sizes: string[];
-  sizePrices: Array<{ size: string; price: number }>;
+  sizeStocks: Array<{ size: string; stock: number }>;
   colors: Array<{ name: string; hex: string; stock: number }>;
   shortDescription: string;
   description: string;
@@ -528,8 +528,8 @@ function ProductForm({
     fit: editProduct?.fit ?? "regular",
     price: editProduct ? String(editProduct.price) : "",
     discount_percent: String(editProduct?.discountPercent ?? "0"),
-    sizes: editProduct?.sizePrices?.length
-      ? editProduct.sizePrices.map(sp => `${sp.size}|${sp.price}`).join("\n")
+    sizes: editProduct?.sizeStocks?.length
+      ? editProduct.sizeStocks.map(ss => `${ss.size}|${ss.stock}`).join("\n")
       : editProduct?.sizes?.map(s => `${s}|0`).join("\n") ?? "",
     images: editProduct?.images?.join(", ") ?? "",
     tags: editProduct?.tags?.join(", ") ?? "",
@@ -1097,19 +1097,19 @@ function ProductForm({
         />
       </label>
 
-      {/* 6. Хэмжээ & үнэ */}
+      {/* 6. Хэмжээ & нөөц (тус бүрт) */}
       {isApparel && (
         <div className="block sm:col-span-2 lg:col-span-3">
-          <span className={lbl}>Хэмжээ & үнэ (нэг мөрт нэг хэмжээ, формат: <code className="text-accent-dark">Хэмжээ|Үнэ</code>)</span>
+          <span className={lbl}>Хэмжээ & нөөц — нэг мөрт нэг хэмжээ: <code className="text-accent-dark">Хэмжээ|Тоо</code></span>
           <textarea
             name="sizes"
             rows={5}
-            placeholder={"XS|45000\nS|48000\nM|50000\nL|52000\nXL|55000"}
+            placeholder={"XS|10\nS|15\nM|20\nL|12\nXL|8"}
             value={v.sizes}
             onChange={(e) => set("sizes", e.target.value)}
             className={field + " font-mono text-xs"}
           />
-          <p className="mt-1 text-xs text-muted">Жишээ: <code>M|50000</code> → M хэмжээний үнэ 50,000₮. Хэмжээнүүд тусдаа мөрт байна.</p>
+          <p className="mt-1 text-xs text-muted">Жишээ: <code>M|20</code> → M хэмжээний нөөц 20 ширхэг. Нөөц 0 бол тухайн хэмжээ дууссан гэж харагдана.</p>
         </div>
       )}
 

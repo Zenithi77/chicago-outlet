@@ -24,7 +24,7 @@ function mapRow(data: Record<string, unknown>): Product {
     discountPercent: Number(data.discount_percent ?? 0),
     images: (data.images as string[]) ?? [],
     sizes: (data.sizes as string[]) ?? [],
-    sizePrices: (data.size_prices as Product["sizePrices"]) ?? [],
+    sizeStocks: (data.size_stocks as Product["sizeStocks"]) ?? [],
     colors: (data.colors as Product["colors"]) ?? [],
     tags: (data.tags as string[]) ?? [],
     isFeatured: Boolean(data.is_featured),

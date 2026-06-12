@@ -26,24 +26,29 @@ export function ProductDetail({ product, isLoggedIn = false }: { product: Produc
   const [mounted, setMounted] = useState(false);
   useEffect(() => setMounted(true), []);
 
-  // Per-size price: if sizePrices has entry for selected size, use it; else base price
-  const hasSizePrices = product.sizePrices && product.sizePrices.length > 0;
-  const selectedSizePrice = hasSizePrices && size
-    ? product.sizePrices.find((sp) => sp.size === size)?.price ?? product.price
-    : product.price;
-  const effectiveBasePrice = hasSizePrices && size ? selectedSizePrice : product.price;
+  // Per-size stock lookup
+  const hasSizeStocks = product.sizeStocks && product.sizeStocks.length > 0;
+  const getSizeStock = (s: string) => {
+    if (!hasSizeStocks) return product.totalStock;
+    return product.sizeStocks.find((ss) => ss.size === s)?.stock ?? 0;
+  };
 
-  // Apply discount on top of effective base price
+  // Uniform price (no per-size pricing)
   const fp = product.discountPercent > 0
-    ? Math.round(effectiveBasePrice * (1 - product.discountPercent / 100))
-    : effectiveBasePrice;
-  const save = effectiveBasePrice - fp;
+    ? Math.round(product.price * (1 - product.discountPercent / 100))
+    : product.price;
+  const save = product.price - fp;
   const hasColors = product.colors.length > 0;
   const hasSizes = product.sizes.length > 0;
   const color = hasColors
     ? product.colors[colorIdx] ?? product.colors[0]
     : { name: "", hex: "#000000" };
-  const soldOut = product.totalStock <= 0;
+
+  // Sold out: if size selected + sizeStocks exist, check per-size; else check total
+  const selectedSizeStock = size ? getSizeStock(size) : null;
+  const soldOut = hasSizeStocks
+    ? (selectedSizeStock !== null ? selectedSizeStock <= 0 : product.totalStock <= 0)
+    : product.totalStock <= 0;
 
   const add = (buyNow = false) => {
     if (!isLoggedIn) {
@@ -52,6 +57,11 @@ export function ProductDetail({ product, isLoggedIn = false }: { product: Produc
     }
     if (hasSizes && !size) {
       setError("Хэмжээгээ сонгоно уу.");
+      return;
+    }
+    const effectiveStock = size ? getSizeStock(size) : product.totalStock;
+    if (effectiveStock <= 0) {
+      setError("Энэ хэмжээ дууссан байна.");
       return;
     }
     setError("");
@@ -66,7 +76,7 @@ export function ProductDetail({ product, isLoggedIn = false }: { product: Produc
       qty,
       unitPrice: fp,
       image: product.images[0] ?? product.slug,
-      maxStock: product.totalStock,
+      maxStock: effectiveStock,
     });
     if (buyNow) {
       window.location.href = "/checkout";
@@ -192,23 +202,25 @@ export function ProductDetail({ product, isLoggedIn = false }: { product: Produc
             </div>
             <div className="flex flex-wrap gap-2">
               {product.sizes.map((s) => {
-                const sp = product.sizePrices?.find((p) => p.size === s);
+                const sStock = getSizeStock(s);
+                const isSoldOut = hasSizeStocks && sStock <= 0;
                 return (
                   <button
                     key={s}
-                    onClick={() => { setSize(s); setError(""); }}
+                    onClick={() => { if (!isSoldOut) { setSize(s); setError(""); } }}
+                    disabled={isSoldOut}
                     className={classNames(
-                      "flex min-w-11 flex-col items-center rounded-md border px-3 py-2 text-sm font-medium transition",
-                      size === s
+                      "relative flex min-w-11 flex-col items-center rounded-md border px-3 py-2 text-sm font-medium transition",
+                      isSoldOut
+                        ? "cursor-not-allowed border-border bg-border/30 text-muted line-through"
+                        : size === s
                         ? "border-foreground bg-foreground text-white"
                         : "bg-surface hover:border-foreground"
                     )}
                   >
                     <span>{s}</span>
-                    {sp && sp.price > 0 && (
-                      <span className={classNames("text-[10px] font-normal", size === s ? "text-white/80" : "text-muted")}>
-                        {formatMNT(sp.price)}
-                      </span>
+                    {isSoldOut && (
+                      <span className="text-[10px] font-normal text-danger/70">Дууссан</span>
                     )}
                   </button>
                 );
@@ -221,8 +233,14 @@ export function ProductDetail({ product, isLoggedIn = false }: { product: Produc
           {/* Stock */}
           <p className="mt-4 text-sm">
             {soldOut ? (
-              <span className="font-semibold text-danger">Дууссан</span>
-            ) : product.totalStock <= 5 ? (
+              <span className="font-semibold text-danger">
+                {size && hasSizeStocks ? `${size} хэмжээ дууссан` : "Дууссан"}
+              </span>
+            ) : selectedSizeStock !== null && selectedSizeStock <= 5 ? (
+              <span className="font-semibold text-danger">
+                {size} хэмжээнд зөвхөн {selectedSizeStock} ширхэг үлдсэн!
+              </span>
+            ) : product.totalStock <= 5 && !hasSizeStocks ? (
               <span className="font-semibold text-danger">
                 Зөвхөн {product.totalStock} ширхэг үлдсэн!
               </span>
@@ -231,13 +249,38 @@ export function ProductDetail({ product, isLoggedIn = false }: { product: Produc
             )}
           </p>
 
+          {/* Online order terms notice */}
+          {product.isOnline && (
+            <div className="mt-5 rounded-xl border border-amber-200 bg-amber-50 p-4 text-xs leading-relaxed text-amber-900">
+              <p className="mb-2 font-semibold text-sm">📦 Захиалгын барааны үйлчилгээний нөхцөл</p>
+              <div className="space-y-3">
+                <div>
+                  <p className="font-semibold">1. Тээвэрлэлтийн хугацаа</p>
+                  <p className="mt-0.5">Агаарын тээвэр: ажлын <strong>7–14 хоног</strong></p>
+                  <p>Газрын тээвэр: ажлын <strong>45–60 хоног</strong></p>
+                  <p className="mt-0.5 text-amber-700">(Гааль, давагдашгүй хүчин зүйлээс шалтгаалж өөрчлөгдөж болно.)</p>
+                </div>
+                <div>
+                  <p className="font-semibold">2. Тээврийн зардал (Карго)</p>
+                  <p className="mt-0.5">Бараа Монголд ирэх үед хүлээн авагч хариуцан төлнө.</p>
+                  <p>Агаарын: <strong>1 кг → 10$</strong> · Газрын: хэмжээгээр тусгай тариф</p>
+                </div>
+                <div>
+                  <p className="font-semibold">3. Буцаалт & Солилцоо</p>
+                  <p className="mt-0.5"><span className="font-medium text-red-700">Буцаалт хийх боломжгүй.</span></p>
+                  <p>Размер/өнгө зөрүүтэй бол хүлээн авснаас хойш <strong>7 хоногийн дотор</strong> салбарт биечлэн ирж солих боломжтой.</p>
+                </div>
+              </div>
+            </div>
+          )}
+
           {/* Qty + actions — desktop only */}
           <div className="mt-5 hidden flex-col gap-3 sm:flex-row sm:items-center lg:flex">
             <div className="flex items-center rounded-md border">
               <button onClick={() => setQty((q) => Math.max(1, q - 1))} className="px-4 py-3">−</button>
               <span className="w-10 text-center">{qty}</span>
               <button
-                onClick={() => setQty((q) => Math.min(10, product.totalStock, q + 1))}
+                onClick={() => setQty((q) => Math.min(10, (selectedSizeStock ?? product.totalStock), q + 1))}
                 className="px-4 py-3"
               >
                 +
@@ -365,7 +408,7 @@ export function ProductDetail({ product, isLoggedIn = false }: { product: Produc
                 </button>
                 <span className="w-8 text-center text-sm font-semibold">{qty}</span>
                 <button
-                  onClick={() => setQty((q) => Math.min(10, product.totalStock, q + 1))}
+                  onClick={() => setQty((q) => Math.min(10, (selectedSizeStock ?? product.totalStock), q + 1))}
                   className="px-3 py-2.5 text-lg font-medium leading-none"
                 >
                   +

@@ -17,9 +17,9 @@ export interface ProductColor {
   stock: number;
 }
 
-export interface ProductSizePrice {
+export interface ProductSizeStock {
   size: string;
-  price: number;
+  stock: number;
 }
 
 export interface Product {
@@ -37,7 +37,7 @@ export interface Product {
   discountPercent: number;
   images: string[];
   sizes: string[];
-  sizePrices: ProductSizePrice[]; // per-size pricing; empty = use base price for all
+  sizeStocks: ProductSizeStock[]; // per-size stock; empty = use totalStock for all
   colors: ProductColor[];
   tags: string[];
   isFeatured: boolean;
