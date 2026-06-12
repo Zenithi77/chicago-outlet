@@ -59,7 +59,8 @@ export default function CheckoutPage() {
   const [termsOpen, setTermsOpen] = useState(false);
   const [termsAgreed, setTermsAgreed] = useState(false);
 
-  const shippingFee = shippingMethod === "express" ? BRAND.expressFee : 0;
+  const shippingFee =
+    subtotal >= BRAND.freeShippingThreshold ? 0 : BRAND.deliveryFee;
   const total = Math.max(0, subtotal - discount) + shippingFee;
 
   const set = (k: string, v: string) => setForm((f) => ({ ...f, [k]: v }));
@@ -448,7 +449,7 @@ export default function CheckoutPage() {
             <div className="mt-4 space-y-2">
               <Row label="Дэд дүн" value={formatMNT(subtotal)} />
               {discount > 0 && <Row label="Хямдрал" value={`-${formatMNT(discount)}`} />}
-              <Row label="Хүргэлт" value={shippingFee === 0 ? "Үнэгүй" : formatMNT(shippingFee)} />
+              <Row label="Хүргэлт" value={shippingFee === 0 ? `Үнэгүй (₮${BRAND.freeShippingThreshold.toLocaleString()}+)` : formatMNT(shippingFee)} />
               <div className="flex justify-between border-t pt-3 text-base font-bold">
                 <span>Нийт</span>
                 <span>{formatMNT(total)}</span>
