@@ -7,7 +7,6 @@ import { finalPrice, formatMNT, classNames } from "@/lib/utils";
 import { useCart } from "@/lib/store/cart";
 import { ProductImage } from "./ProductImage";
 import { Badge } from "./Badge";
-import { StarIcon } from "./Icons";
 
 export function ProductCard({ product }: { product: Product }) {
   const addItem = useCart((s) => s.addItem);
@@ -70,7 +69,7 @@ export function ProductCard({ product }: { product: Product }) {
         </p>
         <Link
           href={`/product/${product.slug}`}
-          className="mt-0.5 line-clamp-2 min-h-[2.5rem] text-sm font-medium leading-tight hover:text-accent-dark"
+          className="mt-0.5 text-sm font-medium leading-snug hover:text-accent-dark"
         >
           {product.name}
         </Link>
@@ -91,12 +90,6 @@ export function ProductCard({ product }: { product: Product }) {
               : "Захиалга"}
           </span>
         )}
-        <div className="mt-1 flex items-center gap-1 text-xs text-muted">
-          <StarIcon className="h-3.5 w-3.5 text-accent-dark" />
-          <span>{product.rating.toFixed(1)}</span>
-          <span>({product.reviewCount})</span>
-        </div>
-
         <div className="mt-1.5 flex items-baseline gap-2">
           <span className="text-sm font-semibold">{formatMNT(fp)}</span>
           {product.discountPercent > 0 && (

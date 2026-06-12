@@ -36,7 +36,7 @@ const SCENES: Scene[] = [
     kicker: "New Arrivals · SS25",
     title: "Elevated Basics.",
     from: "#8A6F3E",
-    to: "#C8A96E",
+    to: "#B22234",
   },
 ];
 

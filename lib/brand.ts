@@ -24,7 +24,7 @@ export const BRAND = {
 
 export const colors = {
   black: "#1A1A1A",
-  gold: "#C8A96E",
+  gold: "#B22234",
   light: "#F5F3EF",
   surface: "#FFFFFF",
   muted: "#8A8680",

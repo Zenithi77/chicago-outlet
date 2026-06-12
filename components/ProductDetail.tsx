@@ -322,7 +322,7 @@ export function ProductDetail({ product }: { product: Product }) {
             <button
               onClick={() => add(true)}
               disabled={soldOut}
-              className="rounded-lg border border-[#C8A96E] bg-[#C8A96E] px-4 py-3 text-sm font-semibold text-[#1A1A1A] disabled:opacity-40"
+              className="rounded-lg border border-accent bg-accent px-4 py-3 text-sm font-semibold text-white disabled:opacity-40"
             >
               Авах
             </button>
