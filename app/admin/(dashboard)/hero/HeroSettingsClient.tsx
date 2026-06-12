@@ -180,6 +180,7 @@ export function HeroSettingsClient({
         initial={{
           image: settings.promo1_image ?? "",
           eyebrow: settings.promo1_eyebrow ?? "",
+          eyebrow_color: settings.promo1_eyebrow_color ?? "#ffffff",
           title: settings.promo1_title ?? "",
           subtitle: settings.promo1_subtitle ?? "",
           cta_label: settings.promo1_cta_label ?? "",
@@ -191,6 +192,7 @@ export function HeroSettingsClient({
         initial={{
           image: settings.promo2_image ?? "",
           eyebrow: settings.promo2_eyebrow ?? "",
+          eyebrow_color: settings.promo2_eyebrow_color ?? "#ffffff",
           title: settings.promo2_title ?? "",
           subtitle: settings.promo2_subtitle ?? "",
           cta_label: settings.promo2_cta_label ?? "",
@@ -285,6 +287,7 @@ function AnnouncementSection({
 type PromoFields = {
   image: string;
   eyebrow: string;
+  eyebrow_color: string;
   title: string;
   subtitle: string;
   cta_label: string;
@@ -428,13 +431,22 @@ function PromoBannerSection({
           </div>
 
           <FieldRow label="Дээд жижиг бичиг (eyebrow)">
-            <input
-              type="text"
-              value={values.eyebrow}
-              onChange={(e) => set("eyebrow", e.target.value)}
-              maxLength={60}
-              className="w-full rounded-md border px-3 py-2 text-sm outline-none focus:ring-1 focus:ring-accent"
-            />
+            <div className="flex gap-2">
+              <input
+                type="text"
+                value={values.eyebrow}
+                onChange={(e) => set("eyebrow", e.target.value)}
+                maxLength={60}
+                className="flex-1 rounded-md border px-3 py-2 text-sm outline-none focus:ring-1 focus:ring-accent"
+              />
+              <input
+                type="color"
+                value={values.eyebrow_color || "#ffffff"}
+                onChange={(e) => set("eyebrow_color", e.target.value)}
+                title="Eyebrow өнгө"
+                className="h-10 w-12 cursor-pointer rounded-md border p-1"
+              />
+            </div>
           </FieldRow>
 
           <FieldRow label="Гарчиг">
@@ -507,7 +519,7 @@ function PromoBannerSection({
             )}
             <div className="absolute inset-0 flex flex-col items-start justify-center bg-gradient-to-r from-black/65 to-transparent px-6 md:px-10">
               {values.eyebrow && (
-                <p className="text-[10px] font-semibold uppercase tracking-[0.3em] text-accent">
+                <p className="text-[10px] font-semibold uppercase tracking-[0.3em]" style={{ color: values.eyebrow_color || "#ffffff" }}>
                   {values.eyebrow}
                 </p>
               )}

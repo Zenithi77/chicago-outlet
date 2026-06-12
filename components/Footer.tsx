@@ -8,11 +8,17 @@ export function Footer() {
     <footer className="mt-20 border-t bg-foreground text-white">
       <div className="container-page grid gap-10 py-14 md:grid-cols-4">
         <div>
-          <p className="font-serif text-xl font-bold">CHICAGO OUTLET</p>
-          <p className="mt-3 max-w-xs text-sm text-white/60">{BRAND.tagline}</p>
-          <p className="mt-4 text-sm text-white/60">{BRAND.address}</p>
-          <p className="mt-1 text-sm text-white/60">{BRAND.phone}</p>
-          <p className="text-sm text-white/60">{BRAND.phone2}</p>
+          <p className="font-serif text-xl font-bold tracking-wide">CHICAGO OUTLET</p>
+          <p className="mt-2 text-sm text-white/60 italic">{BRAND.tagline}</p>
+          <p className="mt-4 text-sm text-white/50 leading-relaxed">
+            Улаанбаатар хот, Баянзүрх дүүрэг, 26-р хороо,<br />
+            Их Хүрээ гудамж, Үндэсний Цэцэрлэгт Хүрээлэнгийн хойно,<br />
+            Park Od mall 3-310.
+          </p>
+          <div className="mt-3 space-y-1">
+            <p className="text-sm text-white/70">+976 {BRAND.phone}</p>
+            <p className="text-sm text-white/70">+976 {BRAND.phone2}</p>
+          </div>
         </div>
 
         <div>

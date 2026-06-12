@@ -55,11 +55,7 @@ export function ProductCard({ product }: { product: Product }) {
           {product.isOnSale && (
             <Badge variant="sale">-{product.discountPercent}%</Badge>
           )}
-          {soldOut ? (
-            <Badge variant="sold">Дууссан</Badge>
-          ) : lowStock ? (
-            <Badge variant="low">Цөөн үлдсэн</Badge>
-          ) : null}
+          {soldOut && <Badge variant="sold">Дууссан</Badge>}
         </div>
       </Link>
 

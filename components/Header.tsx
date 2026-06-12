@@ -232,7 +232,7 @@ export function Header({
         {/* ── Row 2: Navigation (desktop only) ───────────────────────────── */}
         <div className="hidden border-t md:block">
           <nav
-            className="container-page flex items-center justify-center gap-1 font-elegant text-[12px] tracking-wide lg:gap-2 lg:text-[13px]"
+            className="container-page flex items-center justify-center gap-1 font-elegant text-[13.5px] tracking-wide lg:gap-2 lg:text-[14.5px]"
             onMouseLeave={scheduleClose}
           >
             {NAV_ITEMS.map((n) => {

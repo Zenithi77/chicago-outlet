@@ -17,6 +17,7 @@ const KEYS = [
   // Promo banner 1
   "promo1_image",
   "promo1_eyebrow",
+  "promo1_eyebrow_color",
   "promo1_title",
   "promo1_subtitle",
   "promo1_cta_label",
@@ -24,6 +25,7 @@ const KEYS = [
   // Promo banner 2
   "promo2_image",
   "promo2_eyebrow",
+  "promo2_eyebrow_color",
   "promo2_title",
   "promo2_subtitle",
   "promo2_cta_label",

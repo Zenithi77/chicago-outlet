@@ -20,12 +20,14 @@ async function getHeroSettings(): Promise<Record<string, string>> {
         "hero_online",
         "promo1_image",
         "promo1_eyebrow",
+        "promo1_eyebrow_color",
         "promo1_title",
         "promo1_subtitle",
         "promo1_cta_label",
         "promo1_cta_href",
         "promo2_image",
         "promo2_eyebrow",
+        "promo2_eyebrow_color",
         "promo2_title",
         "promo2_subtitle",
         "promo2_cta_label",
@@ -42,6 +44,7 @@ async function getHeroSettings(): Promise<Record<string, string>> {
 type PromoBanner = {
   image: string;
   eyebrow: string;
+  eyebrowColor: string;
   title: string;
   subtitle: string;
   ctaLabel: string;
@@ -52,6 +55,7 @@ function readPromo(settings: Record<string, string>, prefix: "promo1_" | "promo2
   const b: PromoBanner = {
     image: (settings[`${prefix}image`] ?? "").trim(),
     eyebrow: (settings[`${prefix}eyebrow`] ?? "").trim(),
+    eyebrowColor: (settings[`${prefix}eyebrow_color`] ?? "#ffffff").trim(),
     title: (settings[`${prefix}title`] ?? "").trim(),
     subtitle: (settings[`${prefix}subtitle`] ?? "").trim(),
     ctaLabel: (settings[`${prefix}cta_label`] ?? "").trim(),
@@ -208,7 +212,7 @@ function PromoBanner({ banner, variant }: { banner: PromoBanner; variant: "image
         )}
         <div className="absolute inset-0 flex flex-col items-start justify-center bg-gradient-to-r from-black/65 to-transparent px-8 md:px-14">
           {banner.eyebrow && (
-            <p className="text-xs font-semibold uppercase tracking-[0.3em] text-accent">
+            <p className="text-xs font-semibold uppercase tracking-[0.3em]" style={{ color: banner.eyebrowColor || "#ffffff" }}>
               {banner.eyebrow}
             </p>
           )}

@@ -125,13 +125,13 @@ export function HeroVideo() {
       <div className="container-page relative flex h-full flex-col justify-end pb-16 text-white sm:justify-center sm:pb-0">
         <div key={active} className="max-w-2xl">
           <p
-            className="mb-1.5 text-[9px] font-semibold uppercase tracking-[0.25em] text-accent/70 sm:mb-4 sm:text-xs sm:tracking-[0.36em] sm:text-accent"
+            className="mb-1.5 text-[9px] font-semibold uppercase tracking-[0.25em] text-white/80 sm:mb-4 sm:text-xs sm:tracking-[0.36em] sm:text-accent"
             style={{ animation: "heroReveal 0.8s ease both" }}
           >
             {scene.kicker}
           </p>
           <h1
-            className="font-serif text-xl font-bold leading-[1.1] text-white/70 sm:text-5xl sm:text-white md:text-7xl"
+            className="font-serif text-2xl font-bold leading-[1.1] text-white sm:text-5xl md:text-7xl"
             style={{ animation: "heroReveal 0.9s ease 0.1s both" }}
           >
             {scene.title}
