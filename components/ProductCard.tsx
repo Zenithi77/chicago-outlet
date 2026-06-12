@@ -110,7 +110,7 @@ export function ProductCard({ product }: { product: Product }) {
         <div className="mt-2 flex min-h-[1rem] items-center gap-1.5">
           {product.colors.slice(0, 5).map((c, i) => (
             <button
-              key={c.name}
+              key={`${c.name}-${i}`}
               type="button"
               title={c.name}
               onClick={() => setActiveColor(i)}

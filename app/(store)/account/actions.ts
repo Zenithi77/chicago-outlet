@@ -78,6 +78,26 @@ export async function logout() {
   redirect("/account");
 }
 
+export async function updateProfile(
+  _prev: AuthState,
+  formData: FormData
+): Promise<AuthState> {
+  const fullName = String(formData.get("full_name") ?? "").trim();
+  const phone = String(formData.get("phone") ?? "").trim();
+
+  const supabase = await createClient();
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) return { error: "Нэвтрээгүй байна." };
+
+  const { error } = await supabase
+    .from("profiles")
+    .update({ full_name: fullName, phone })
+    .eq("id", user.id);
+
+  if (error) return { error: "Мэдээлэл хадгалахад алдаа гарлаа." };
+  return { message: "Мэдээлэл амжилттай хадгалагдлаа." };
+}
+
 // Send OTP code to email for password reset
 export async function forgotPassword(
   _prev: AuthState,

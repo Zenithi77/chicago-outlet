@@ -3,8 +3,9 @@ export const BRAND = {
   tagline: "Dressed for the City. Built for Life.",
   taglineMn: "Хотод зориулсан хувцас. Амьдралд бүтээгдсэн.",
   email: "hello@chicagooutlet.mn",
-  phone: "+976 7700 1234",
-  address: "Улаанбаатар, Сүхбаатар дүүрэг, 1-р хороо",
+  phone: "95 793270",
+  phone2: "99 785802",
+  address: "Улаанбаатар хот, Баянзүрх дүүрэг, 26-р хороо, Их Хүрээ гудамж, Үндэсний Цэцэрлэгт Хүрээлэнгийн хойно Park Od mall 3-310",
   socials: {
     instagram: "https://instagram.com",
     facebook: "https://facebook.com",
@@ -17,7 +18,8 @@ export const BRAND = {
   },
   freeShippingThreshold: 150000,
   codFee: 5000,
-  expressFee: 8000,
+  expressFee: 10000,
+  deliveryFee: 10000,
 } as const;
 
 export const colors = {

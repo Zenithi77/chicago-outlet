@@ -62,14 +62,33 @@ async function getSubcategoryData(): Promise<{
   }
 }
 
+async function getBrands(): Promise<string[]> {
+  try {
+    const supabase = await createClient();
+    const { data } = await supabase
+      .from("products")
+      .select("brand")
+      .eq("is_active", true)
+      .not("brand", "is", null)
+      .neq("brand", "");
+    const brands = Array.from(new Set((data ?? []).map((r: { brand: string }) => r.brand)))
+      .filter(Boolean)
+      .sort() as string[];
+    return brands;
+  } catch {
+    return [];
+  }
+}
+
 export default async function StoreLayout({
   children,
 }: {
   children: React.ReactNode;
 }) {
-  const [announcements, subData] = await Promise.all([
+  const [announcements, subData, brands] = await Promise.all([
     getAnnouncements(),
     getSubcategoryData(),
+    getBrands(),
   ]);
   return (
     <>
@@ -77,6 +96,7 @@ export default async function StoreLayout({
         announcements={announcements}
         subcategoriesByCategory={subData.byCategory}
         subcategoriesByCategoryGender={subData.byCategoryGender}
+        brands={brands}
       />
       <main className="flex-1">{children}</main>
       <Footer />

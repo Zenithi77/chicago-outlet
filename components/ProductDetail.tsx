@@ -134,7 +134,7 @@ export function ProductDetail({ product }: { product: Product }) {
             <div className="flex gap-2">
               {product.colors.map((c, i) => (
                 <button
-                  key={c.name}
+                  key={`${c.name}-${i}`}
                   onClick={() => setColorIdx(i)}
                   title={c.name}
                   className={classNames(

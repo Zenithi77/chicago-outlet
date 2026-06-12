@@ -22,7 +22,6 @@ const NAV = [
   { href: "/admin/discounts", label: "Хямдрал", Icon: TagIcon },
   { href: "/admin/orders", label: "Захиалга", Icon: ClipboardIcon },
   { href: "/admin/customers", label: "Хэрэглэгч", Icon: UsersIcon },
-  { href: "/admin/coupons", label: "Купон & Урамшуулал", Icon: TagIcon },
   { href: "/admin/hero", label: "Нүүр баннер", Icon: ImageIcon },
 ];
 

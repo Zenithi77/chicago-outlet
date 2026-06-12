@@ -541,10 +541,8 @@ function ProductForm({
   const set = (k: keyof typeof v, val: string | boolean) =>
     setV((p) => ({ ...p, [k]: val }));
 
-  const [kind, setKind] = useState<"apparel" | "food" | "home" | "other">(
-    "apparel"
-  );
-  const isApparel = kind === "apparel";
+  const APPAREL_CATEGORIES = ["Хувцас", "Гутал", "Цүнх"];
+  const isApparel = APPAREL_CATEGORIES.includes(v.category);
 
   const [barcode, setBarcode] = useState("");
   const [scanning, setScanning] = useState(false);
@@ -785,40 +783,7 @@ function ProductForm({
         </div>
       </div>
 
-      {/* Барааны төрөл */}
-      <div className="sm:col-span-2 lg:col-span-3">
-        <span className={lbl}>Барааны төрөл</span>
-        <div className="flex flex-wrap gap-2">
-          {(
-            [
-              ["apparel", "Хувцас"],
-              ["food", "Хүнс & Нэмэлт тэжээл"],
-              ["home", "Гэр ахуй"],
-              ["other", "Бусад"],
-            ] as const
-          ).map(([k, label]) => (
-            <button
-              key={k}
-              type="button"
-              onClick={() => setKind(k)}
-              className={classNames(
-                "rounded-full px-4 py-1.5 text-sm font-medium transition",
-                kind === k
-                  ? "bg-foreground text-white"
-                  : "border bg-surface hover:border-foreground"
-              )}
-            >
-              {label}
-            </button>
-          ))}
-        </div>
-        {!isApparel && (
-          <p className="mt-1.5 text-xs text-muted">
-            Хэмжээ, өнгө, загвар зэрэг хувцасны талбаруудыг нуусан. Зөвхөн
-            хэрэгцээтэй мэдээллийг бөглөнө үү.
-          </p>
-        )}
-      </div>
+
 
       {/* 1. Нэр */}
       <label className="block sm:col-span-2 lg:col-span-3">

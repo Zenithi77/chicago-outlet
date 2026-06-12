@@ -26,10 +26,16 @@ const NAV_ITEMS: {
   href?: string;
   hasMenu?: boolean;
   accent?: boolean;
-}[] = [
-  ...CATEGORIES.map((c) => ({ slug: c.slug, label: c.nameMn, hasMenu: true })),
-  { slug: "sale", label: "Хямдрал", href: "/shop?gender=sale", accent: true },
-];
+}[] = (() => {
+  const cats = CATEGORIES.map((c) => ({ slug: c.slug, label: c.nameMn, hasMenu: true }));
+  const mid = Math.ceil(cats.length / 2);
+  return [
+    ...cats.slice(0, mid),
+    { slug: "brands", label: "Брэндүүд", href: "/shop?sort=brand", hasMenu: true },
+    ...cats.slice(mid),
+    { slug: "sale", label: "Хямдрал", href: "/shop?gender=sale", accent: true },
+  ];
+})();
 
 const DEFAULT_ANNOUNCEMENTS = [
   `₮${BRAND.freeShippingThreshold.toLocaleString()}+ захиалгад үнэгүй хүргэлт`,
@@ -41,10 +47,12 @@ export function Header({
   announcements,
   subcategoriesByCategory,
   subcategoriesByCategoryGender,
+  brands = [],
 }: {
   announcements?: string[];
   subcategoriesByCategory?: Record<string, string[]>;
   subcategoriesByCategoryGender?: Record<string, Record<string, string[]>>;
+  brands?: string[];
 } = {}) {
   const router = useRouter();
   const count = useCart((s) => s.count());
@@ -152,7 +160,7 @@ export function Header({
         </div>
       </div>
 
-      {/* Main bar */}
+      {/* Main bar — double row on desktop */}
       <div
         className={classNames(
           "relative border-b bg-surface/85 backdrop-blur-md transition-all duration-300",
@@ -160,77 +168,54 @@ export function Header({
         )}
         onMouseLeave={() => setHovered(null)}
       >
-        <div
-          className={classNames(
-            "container-page relative flex items-center justify-between gap-4 transition-all duration-300",
-            scrolled ? "h-14" : "h-[4.5rem]"
-          )}
-        >
-          {/* Left: mobile menu + desktop nav */}
-          <div className="flex items-center gap-6">
-            <button
-              type="button"
-              className="md:hidden"
-              onClick={() => setMenuOpen(true)}
-              aria-label="Цэс нээх"
-            >
-              <MenuIcon />
-            </button>
-            <nav
-              className="hidden items-center gap-3 font-elegant text-[12px] tracking-wide md:flex lg:gap-5 lg:text-[13px]"
-              onMouseLeave={scheduleClose}
-            >
-              {NAV_ITEMS.map((n) => {
-                const href =
-                  n.href ??
-                  `/shop?category=${encodeURIComponent(CATEGORIES.find((c) => c.slug === n.slug)?.name ?? n.label)}`;
-                return (
-                  <div
-                    key={n.slug}
-                    onMouseEnter={() => openMenu(n.hasMenu ? n.slug : null)}
-                    className="flex items-center"
-                  >
-                    <Link
-                      href={href}
-                      onClick={closeMenu}
-                      className={classNames(
-                        "group relative flex items-center gap-0.5 py-2 font-medium transition-colors",
-                        n.accent ? "italic text-danger" : "hover:text-accent-dark"
-                      )}
-                    >
-                      {n.label}
-                      {n.hasMenu && (
-                        <ChevronDown className="h-3 w-3 opacity-50 transition-transform group-hover:rotate-180" />
-                      )}
-                      <span
-                        className={classNames(
-                          "absolute inset-x-0 -bottom-px h-px origin-left scale-x-0 bg-foreground transition-transform duration-300 group-hover:scale-x-100",
-                          hovered === n.slug && "scale-x-100"
-                        )}
-                      />
-                    </Link>
-                  </div>
-                );
-              })}
-            </nav>
-          </div>
+        {/* ── Row 1: Logo + actions ───────────────────────────────────────── */}
+        <div className="container-page flex items-center justify-between gap-4 py-3">
+          {/* Mobile: hamburger */}
+          <button
+            type="button"
+            className="md:hidden"
+            onClick={() => setMenuOpen(true)}
+            aria-label="Цэс нээх"
+          >
+            <MenuIcon />
+          </button>
 
-          {/* Center: logo */}
+          {/* Desktop left placeholder */}
+          <div className="hidden md:block" style={{ minWidth: 120 }} />
+
+          {/* Center: brand logo — absolutely centered so it's always in the middle */}
           <Link
             href="/"
             className="absolute left-1/2 -translate-x-1/2 text-center leading-none"
             onMouseEnter={() => setHovered(null)}
           >
-            <span className="block font-serif text-[1.35rem] font-bold tracking-[0.12em] md:text-2xl">
+            <span
+              className="block font-serif text-[1.25rem] font-bold tracking-[0.18em] md:text-[1.75rem]"
+              style={{
+                background: "linear-gradient(90deg, #B22234 0%, #B22234 40%, #3C3B6E 60%, #3C3B6E 100%)",
+                WebkitBackgroundClip: "text",
+                WebkitTextFillColor: "transparent",
+                backgroundClip: "text",
+              }}
+            >
               CHICAGO
             </span>
-            <span className="-mt-0.5 block text-[9px] font-medium uppercase tracking-[0.42em] text-accent-dark">
+            <span
+              className="-mt-1 block text-[9px] font-semibold uppercase tracking-[0.5em] md:text-[10px]"
+              style={{
+                background: "linear-gradient(90deg, #B22234 0%, #B22234 40%, #3C3B6E 60%, #3C3B6E 100%)",
+                WebkitBackgroundClip: "text",
+                WebkitTextFillColor: "transparent",
+                backgroundClip: "text",
+              }}
+            >
               Outlet
             </span>
           </Link>
 
           {/* Right: actions */}
-          <div className="flex items-center gap-1 sm:gap-1.5">
+          <div className="flex items-center gap-1 sm:gap-1.5" style={{ minWidth: 120, justifyContent: "flex-end" }}>
+            {/* Search — visible on both mobile and desktop */}
             <button
               type="button"
               onClick={() => setSearchOpen((v) => !v)}
@@ -269,12 +254,54 @@ export function Header({
           </div>
         </div>
 
+        {/* ── Row 2: Navigation (desktop only) ───────────────────────────── */}
+        <div className="hidden border-t md:block">
+          <nav
+            className="container-page flex items-center justify-center gap-1 font-elegant text-[12px] tracking-wide lg:gap-2 lg:text-[13px]"
+            onMouseLeave={scheduleClose}
+          >
+            {NAV_ITEMS.map((n) => {
+              const href =
+                n.href ??
+                `/shop?category=${encodeURIComponent(CATEGORIES.find((c) => c.slug === n.slug)?.name ?? n.label)}`;
+              return (
+                <div
+                  key={n.slug}
+                  onMouseEnter={() => openMenu(n.hasMenu ? n.slug : null)}
+                  className="flex items-center"
+                >
+                  <Link
+                    href={href}
+                    onClick={closeMenu}
+                    className={classNames(
+                      "group relative flex items-center gap-0.5 px-3 py-3 font-medium transition-colors",
+                      n.accent ? "italic text-danger" : "hover:text-accent-dark"
+                    )}
+                  >
+                    {n.label}
+                    {n.hasMenu && (
+                      <ChevronDown className="h-3 w-3 opacity-50 transition-transform group-hover:rotate-180" />
+                    )}
+                    <span
+                      className={classNames(
+                        "absolute inset-x-0 -bottom-px h-[2px] origin-left scale-x-0 bg-foreground transition-transform duration-300 group-hover:scale-x-100",
+                        hovered === n.slug && "scale-x-100"
+                      )}
+                    />
+                  </Link>
+                </div>
+              );
+            })}
+          </nav>
+        </div>
+
         {/* Mega-menu dropdown */}
         <div
           className={classNames(
             "absolute inset-x-0 top-full hidden overflow-hidden bg-surface transition-all duration-300 md:block",
             (() => {
               if (!hovered) return false;
+              if (hovered === "brands") return brands.length > 0;
               const cat = CATEGORIES.find((c) => c.slug === hovered);
               if (!cat) return false;
               const subs = subcategoriesByCategory?.[cat.name] ?? [];
@@ -291,6 +318,40 @@ export function Header({
           <div className="h-[2px] w-full bg-gradient-to-r from-transparent via-accent to-transparent" />
           <div className="container-page py-10">
             {(() => {
+              // Brands panel
+              if (hovered === "brands") {
+                if (brands.length === 0) return null;
+                return (
+                  <div>
+                    <div className="mb-5 flex items-center justify-between">
+                      <div>
+                        <h3 className="font-serif text-lg font-bold">Брэндүүд</h3>
+                        <p className="text-xs text-muted">{brands.length} брэнд</p>
+                      </div>
+                      <Link
+                        href="/shop?sort=brand"
+                        className="group inline-flex items-center gap-1.5 text-xs font-semibold uppercase tracking-wider text-accent-dark"
+                      >
+                        Бүгдийг үзэх
+                        <ChevronDown className="-rotate-90 transition-transform group-hover:translate-x-1" />
+                      </Link>
+                    </div>
+                    <div className="grid grid-cols-4 gap-3 lg:grid-cols-6">
+                      {brands.map((brand) => (
+                        <Link
+                          key={brand}
+                          href={`/shop?brand=${encodeURIComponent(brand)}`}
+                          className="group relative overflow-hidden rounded-lg border border-transparent bg-background/50 p-4 text-sm font-medium transition-all duration-200 hover:-translate-y-0.5 hover:border-accent hover:bg-surface hover:shadow-md"
+                        >
+                          <span className="relative z-10">{brand}</span>
+                          <ChevronDown className="absolute right-3 top-1/2 z-10 -translate-y-1/2 -rotate-90 opacity-0 transition-all duration-200 group-hover:translate-x-1 group-hover:opacity-60" />
+                        </Link>
+                      ))}
+                    </div>
+                  </div>
+                );
+              }
+
               const cat = CATEGORIES.find((c) => c.slug === hovered);
               if (!cat) return null;
               const subs = subcategoriesByCategory?.[cat.name] ?? [];
@@ -576,8 +637,28 @@ export function Header({
           <div className="pointer-events-none absolute -bottom-12 -left-8 h-32 w-32 rounded-full bg-white/5 blur-2xl" />
           <div className="relative flex items-start justify-between">
             <div>
-              <p className="font-serif text-xl font-bold tracking-[0.14em]">CHICAGO</p>
-              <p className="-mt-1 text-[10px] font-medium uppercase tracking-[0.42em] text-accent">Outlet</p>
+              <p
+                className="font-serif text-xl font-bold tracking-[0.14em]"
+                style={{
+                  background: "linear-gradient(90deg, #B22234 0%, #B22234 40%, #3C3B6E 60%, #3C3B6E 100%)",
+                  WebkitBackgroundClip: "text",
+                  WebkitTextFillColor: "transparent",
+                  backgroundClip: "text",
+                }}
+              >
+                CHICAGO
+              </p>
+              <p
+                className="-mt-1 text-[10px] font-semibold uppercase tracking-[0.42em]"
+                style={{
+                  background: "linear-gradient(90deg, #B22234 0%, #B22234 40%, #3C3B6E 60%, #3C3B6E 100%)",
+                  WebkitBackgroundClip: "text",
+                  WebkitTextFillColor: "transparent",
+                  backgroundClip: "text",
+                }}
+              >
+                Outlet
+              </p>
             </div>
             <button
               onClick={() => setMenuOpen(false)}

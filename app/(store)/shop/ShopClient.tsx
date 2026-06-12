@@ -9,8 +9,8 @@ import { CloseIcon, FilterIcon } from "@/components/Icons";
 import type { Product } from "@/lib/types";
 
 const SORTS = [
-  { value: "relevance", label: "Хамаарал" },
   { value: "newest", label: "Шинэ эхэндээ" },
+  { value: "relevance", label: "Хамаарал" },
   { value: "price-asc", label: "Үнэ: бага → их" },
   { value: "price-desc", label: "Үнэ: их → бага" },
   { value: "discount", label: "Хямдрал ихтэй" },
@@ -38,7 +38,7 @@ function ShopContent({ products }: { products: Product[] }) {
     return { dataMin: min, dataMax: Math.max(max, min + 1000) };
   }, [products]);
 
-  const [sort, setSort] = useState("relevance");
+  const [sort, setSort] = useState("newest");
   const [activeBranch, setActiveBranch] = useState<string>(branchParam);
   const [activeCats, setActiveCats] = useState<string[]>(
     categoryParam ? [categoryParam] : []
@@ -177,7 +177,7 @@ function ShopContent({ products }: { products: Product[] }) {
       <div className="flex items-center justify-between border-y py-3 md:hidden">
         <button
           onClick={() => setFiltersOpen((v) => !v)}
-          className="flex items-center gap-1.5 text-sm font-semibold"
+          className="flex items-center gap-2 rounded-full border border-foreground/20 bg-surface px-4 py-2 text-sm font-semibold shadow-sm transition hover:border-foreground hover:bg-background active:scale-95"
         >
           <FilterIcon className="h-4 w-4" /> Шүүлтүүр
         </button>

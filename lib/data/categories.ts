@@ -18,8 +18,29 @@ export const CATEGORIES: CategoryNode[] = [
       { name: "Доод хувцас",   nameMn: "Доод хувцас",   slug: "bottoms" },
       { name: "Гадуур хувцас", nameMn: "Гадуур хувцас", slug: "outerwear" },
       { name: "Даашинз",       nameMn: "Даашинз",       slug: "dresses" },
-      { name: "Гутал",         nameMn: "Гутал",         slug: "shoes" },
       { name: "Гоёл чимэглэл", nameMn: "Гоёл чимэглэл", slug: "accessories" },
+    ],
+  },
+  {
+    name: "Гутал",
+    nameMn: "Гутал",
+    slug: "gotal",
+    children: [
+      { name: "Эрэгтэй гутал",  nameMn: "Эрэгтэй гутал",  slug: "men-shoes" },
+      { name: "Эмэгтэй гутал",  nameMn: "Эмэгтэй гутал",  slug: "women-shoes" },
+      { name: "Хүүхдийн гутал", nameMn: "Хүүхдийн гутал", slug: "kids-shoes" },
+      { name: "Спорт гутал",    nameMn: "Спорт гутал",    slug: "sport-shoes" },
+    ],
+  },
+  {
+    name: "Цүнх",
+    nameMn: "Цүнх",
+    slug: "tsunkh",
+    children: [
+      { name: "Гар цүнх",    nameMn: "Гар цүнх",    slug: "handbags" },
+      { name: "Нуруун цүнх", nameMn: "Нуруун цүнх", slug: "backpacks" },
+      { name: "Биелгэ цүнх", nameMn: "Биелгэ цүнх", slug: "shoulder-bags" },
+      { name: "Жижиг цүнх",  nameMn: "Жижиг цүнх",  slug: "clutches" },
     ],
   },
   {
