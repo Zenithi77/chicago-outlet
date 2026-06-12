@@ -7,7 +7,7 @@ import { finalPrice, savings, formatMNT, classNames } from "@/lib/utils";
 import { useCart } from "@/lib/store/cart";
 import { ProductImage } from "@/components/ProductImage";
 import { Badge } from "@/components/Badge";
-import { StarIcon, HeartIcon, RefreshIcon, TruckIcon } from "@/components/Icons";
+import { StarIcon, HeartIcon } from "@/components/Icons";
 
 const TABS = ["Тайлбар", "Хэмжээний заавар", "Материал & Арчилгаа", "Хүргэлт & Буцаалт"];
 
@@ -212,8 +212,8 @@ export function ProductDetail({ product }: { product: Product }) {
             )}
           </p>
 
-          {/* Qty + actions */}
-          <div className="mt-5 flex flex-col gap-3 sm:flex-row sm:items-center">
+          {/* Qty + actions — desktop only */}
+          <div className="mt-5 hidden flex-col gap-3 sm:flex-row sm:items-center lg:flex">
             <div className="flex items-center rounded-md border">
               <button onClick={() => setQty((q) => Math.max(1, q - 1))} className="px-4 py-3">−</button>
               <span className="w-10 text-center">{qty}</span>
@@ -237,7 +237,7 @@ export function ProductDetail({ product }: { product: Product }) {
               Сагсанд нэмэх
             </button>
           </div>
-          <div className="mt-3 flex gap-3">
+          <div className="mt-3 hidden gap-3 lg:flex">
             <button
               onClick={() => add(true)}
               disabled={soldOut}
@@ -248,15 +248,6 @@ export function ProductDetail({ product }: { product: Product }) {
             <button className="flex items-center rounded-md border px-4 hover:border-foreground" aria-label="Хадгалах">
               <HeartIcon className="h-5 w-5" />
             </button>
-          </div>
-
-          <div className="mt-5 space-y-1.5 border-t pt-4 text-sm text-muted">
-            <p className="flex items-center gap-2">
-              <RefreshIcon className="h-4 w-4 shrink-0" /> 14 хоногийн үнэгүй буцаалт
-            </p>
-            <p className="flex items-center gap-2">
-              <TruckIcon className="h-4 w-4 shrink-0" /> ₮150,000+ захиалгад үнэгүй хүргэлт (1–3 хоног)
-            </p>
           </div>
 
           {/* Tabs */}
@@ -304,6 +295,52 @@ export function ProductDetail({ product }: { product: Product }) {
           </div>
         </div>
       </div>
+
+      {/* Sticky mobile footer */}
+      <div className="fixed bottom-0 inset-x-0 z-30 border-t bg-surface/95 backdrop-blur-sm px-4 py-3 lg:hidden">
+        <div className="flex items-center gap-3">
+          {/* Qty */}
+          <div className="flex items-center rounded-lg border bg-background">
+            <button
+              onClick={() => setQty((q) => Math.max(1, q - 1))}
+              className="px-3 py-2.5 text-lg font-medium leading-none"
+            >
+              −
+            </button>
+            <span className="w-8 text-center text-sm font-semibold">{qty}</span>
+            <button
+              onClick={() => setQty((q) => Math.min(10, product.totalStock, q + 1))}
+              className="px-3 py-2.5 text-lg font-medium leading-none"
+            >
+              +
+            </button>
+          </div>
+          {/* Add to cart */}
+          <button
+            onClick={() => add(false)}
+            disabled={soldOut}
+            className={classNames(
+              "flex-1 rounded-lg py-3 text-sm font-semibold uppercase tracking-wider transition",
+              soldOut
+                ? "cursor-not-allowed bg-border text-muted"
+                : "bg-foreground text-white"
+            )}
+          >
+            {soldOut ? "Дууссан" : "Сагсанд нэмэх"}
+          </button>
+          {/* Buy now */}
+          <button
+            onClick={() => add(true)}
+            disabled={soldOut}
+            className="rounded-lg border border-accent bg-accent px-4 py-3 text-sm font-semibold text-foreground disabled:opacity-40"
+          >
+            Авах
+          </button>
+        </div>
+        {error && <p className="mt-1.5 text-center text-xs text-danger">{error}</p>}
+      </div>
+      {/* Bottom padding so sticky footer doesn't cover content on mobile */}
+      <div className="h-20 lg:hidden" />
     </div>
   );
 }
