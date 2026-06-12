@@ -51,10 +51,6 @@ export function ProductDetail({ product, isLoggedIn = false }: { product: Produc
     : product.totalStock <= 0;
 
   const add = (buyNow = false) => {
-    if (!isLoggedIn) {
-      setError("auth");
-      return;
-    }
     if (hasSizes && !size) {
       setError("Хэмжээгээ сонгоно уу.");
       return;
@@ -62,6 +58,10 @@ export function ProductDetail({ product, isLoggedIn = false }: { product: Produc
     const effectiveStock = size ? getSizeStock(size) : product.totalStock;
     if (effectiveStock <= 0) {
       setError("Энэ хэмжээ дууссан байна.");
+      return;
+    }
+    if (buyNow && !isLoggedIn) {
+      setError("auth");
       return;
     }
     setError("");
@@ -86,7 +86,7 @@ export function ProductDetail({ product, isLoggedIn = false }: { product: Produc
   return (
     <div>
       {/* Breadcrumb */}
-      <div className="container-page py-3">
+      <div className="px-4 py-3 lg:mx-auto lg:max-w-5xl lg:px-6">
         <nav className="text-xs text-muted">
           <Link href="/" className="hover:text-foreground">Нүүр</Link> /{" "}
           <Link href="/shop" className="hover:text-foreground">Дэлгүүр</Link> /{" "}
@@ -97,22 +97,45 @@ export function ProductDetail({ product, isLoggedIn = false }: { product: Produc
         </nav>
       </div>
 
-      <div className="lg:container-page lg:grid lg:gap-12 lg:grid-cols-[1.1fr_1fr] lg:pb-16 lg:pt-4">
+      <div className="lg:mx-auto lg:grid lg:max-w-5xl lg:grid-cols-[auto_minmax(0,1fr)] lg:gap-12 lg:px-6 lg:pb-16 lg:pt-2">
         {/* Gallery */}
-        <div className="lg:sticky lg:top-24 lg:self-start">
-          {/* Main image — edge-to-edge on mobile */}
-          <div className="relative w-full overflow-hidden lg:rounded-xl">
-            <ProductImage
-              seed={product.images[imgIdx] ?? product.slug}
-              label={product.name}
-              className="aspect-square w-full lg:aspect-[4/5]"
-            />
-            <div className="absolute left-3 top-3 flex gap-1">
-              {product.isNewArrival && <Badge variant="new">New</Badge>}
-              {product.isOnSale && <Badge variant="sale">-{product.discountPercent}%</Badge>}
+        <div>
+          <div className="lg:flex lg:gap-3">
+            {/* Desktop vertical thumbnails — Nike-style left rail */}
+            {product.images.length > 1 && (
+              <div className="hidden max-h-[475px] flex-col gap-2 overflow-y-auto no-scrollbar lg:flex">
+                {product.images.slice(0, 8).map((img, i) => (
+                  <button
+                    key={img}
+                    onClick={() => setImgIdx(i)}
+                    onMouseEnter={() => setImgIdx(i)}
+                    className={classNames(
+                      "h-[52px] w-[44px] shrink-0 overflow-hidden rounded-md border transition",
+                      i === imgIdx ? "border-foreground" : "border-border/50 hover:border-foreground/50"
+                    )}
+                  >
+                    <ProductImage seed={img} label={product.name} className="h-full w-full" />
+                  </button>
+                ))}
+              </div>
+            )}
+
+            {/* Main image */}
+            <div className="relative w-full overflow-hidden bg-white lg:w-[380px] lg:rounded-xl lg:border lg:border-border/50">
+              <ProductImage
+                seed={product.images[imgIdx] ?? product.slug}
+                label={product.name}
+                fit="contain"
+                className="aspect-square w-full lg:aspect-[4/5]"
+              />
+              <div className="absolute left-3 top-3 flex gap-1">
+                {product.isNewArrival && <Badge variant="new">New</Badge>}
+                {product.isOnSale && <Badge variant="sale">-{product.discountPercent}%</Badge>}
+              </div>
             </div>
           </div>
-          {/* Thumbnail row — horizontal scroll on mobile, hidden on desktop */}
+
+          {/* Mobile thumbnail strip */}
           {product.images.length > 1 && (
             <div className="flex gap-2 overflow-x-auto px-4 py-3 no-scrollbar lg:hidden">
               {product.images.map((img, i) => (
@@ -121,24 +144,7 @@ export function ProductDetail({ product, isLoggedIn = false }: { product: Produc
                   onClick={() => setImgIdx(i)}
                   className={classNames(
                     "h-16 w-14 shrink-0 overflow-hidden rounded-md border-2",
-                    i === imgIdx ? "border-accent" : "border-border"
-                  )}
-                >
-                  <ProductImage seed={img} label={product.name} className="h-full w-full" />
-                </button>
-              ))}
-            </div>
-          )}
-          {/* Desktop vertical thumbnails */}
-          {product.images.length > 1 && (
-            <div className="mt-3 hidden gap-2 lg:flex">
-              {product.images.map((img, i) => (
-                <button
-                  key={img}
-                  onClick={() => setImgIdx(i)}
-                  className={classNames(
-                    "h-16 w-14 shrink-0 overflow-hidden rounded-md border-2",
-                    i === imgIdx ? "border-accent" : "border-transparent"
+                    i === imgIdx ? "border-foreground" : "border-border"
                   )}
                 >
                   <ProductImage seed={img} label={product.name} className="h-full w-full" />
@@ -149,21 +155,25 @@ export function ProductDetail({ product, isLoggedIn = false }: { product: Produc
         </div>
 
         {/* Info */}
-        <div className="px-4 pb-10 pt-4 lg:px-0 lg:pt-0">
-          <div className="flex items-center gap-2 text-xs uppercase tracking-wider text-accent-dark">
-            <span>{product.brand}</span>
-            <span className="text-muted">·</span>
-            <span className="text-muted">{product.collection}</span>
+        <div className="px-4 pb-10 pt-5 lg:px-0 lg:pt-2 lg:sticky lg:top-24 lg:self-start">
+          <div className="flex items-center gap-2 text-[11px] uppercase tracking-[0.18em] text-accent-dark">
+            <span className="font-semibold">{product.brand}</span>
+            {product.collection && (
+              <>
+                <span className="text-muted">·</span>
+                <span className="text-muted">{product.collection}</span>
+              </>
+            )}
           </div>
-          <h1 className="mt-1.5 font-serif text-xl font-bold leading-snug md:text-2xl lg:text-3xl">{product.name}</h1>
-          <p className="mt-1 text-xs text-muted">SKU: {product.id}</p>
+          <h1 className="mt-1.5 text-xl font-semibold leading-snug md:text-2xl">{product.name}</h1>
+          <p className="mt-1 text-[11px] uppercase tracking-wider text-muted">SKU: {product.id}</p>
 
-          <div className="mt-3 flex items-baseline gap-3">
-            <span className="text-2xl font-bold">{formatMNT(fp)}</span>
+          <div className="mt-3 flex flex-wrap items-baseline gap-x-3 gap-y-1">
+            <span className="text-xl font-bold lg:text-2xl">{formatMNT(fp)}</span>
             {product.discountPercent > 0 && (
               <>
-                <span className="text-lg text-muted line-through">{formatMNT(product.price)}</span>
-                <span className="text-sm font-semibold text-danger">
+                <span className="text-base text-muted line-through">{formatMNT(product.price)}</span>
+                <span className="rounded-md bg-danger/10 px-2 py-0.5 text-xs font-semibold text-danger">
                   -{formatMNT(save)} хэмнэлт
                 </span>
               </>
@@ -173,18 +183,18 @@ export function ProductDetail({ product, isLoggedIn = false }: { product: Produc
           {/* Colors */}
           {hasColors && (
           <div className="mt-6">
-            <p className="mb-2 text-sm font-medium">
+            <p className="mb-2.5 text-sm font-medium">
               Өнгө: <span className="text-muted">{color.name}</span>
             </p>
-            <div className="flex gap-2">
+            <div className="flex flex-wrap gap-2.5">
               {product.colors.map((c, i) => (
                 <button
                   key={`${c.name}-${i}`}
                   onClick={() => setColorIdx(i)}
                   title={c.name}
                   className={classNames(
-                    "h-9 w-9 rounded-full border ring-offset-2 transition",
-                    i === colorIdx ? "ring-2 ring-accent" : ""
+                    "h-9 w-9 rounded-full border border-border ring-offset-2 transition hover:scale-105",
+                    i === colorIdx ? "ring-2 ring-foreground" : ""
                   )}
                   style={{ backgroundColor: c.hex }}
                   aria-label={c.name}
@@ -197,7 +207,7 @@ export function ProductDetail({ product, isLoggedIn = false }: { product: Produc
           {/* Sizes */}
           {hasSizes && (
           <div className="mt-6">
-            <div className="mb-2">
+            <div className="mb-2.5">
               <p className="text-sm font-medium">Хэмжээ</p>
             </div>
             <div className="flex flex-wrap gap-2">
@@ -210,23 +220,23 @@ export function ProductDetail({ product, isLoggedIn = false }: { product: Produc
                     onClick={() => { if (!isSoldOut) { setSize(s); setError(""); } }}
                     disabled={isSoldOut}
                     className={classNames(
-                      "relative flex min-w-11 flex-col items-center rounded-md border px-3 py-2 text-sm font-medium transition",
+                      "relative flex h-12 min-w-[3rem] flex-col items-center justify-center rounded-md border px-3 text-sm font-semibold transition",
                       isSoldOut
                         ? "cursor-not-allowed border-border bg-border/30 text-muted line-through"
                         : size === s
                         ? "border-foreground bg-foreground text-white"
-                        : "bg-surface hover:border-foreground"
+                        : "border-border bg-surface hover:border-foreground"
                     )}
                   >
                     <span>{s}</span>
                     {isSoldOut && (
-                      <span className="text-[10px] font-normal text-danger/70">Дууссан</span>
+                      <span className="text-[9px] font-normal leading-none text-danger/70">Дууссан</span>
                     )}
                   </button>
                 );
               })}
             </div>
-            {error && error !== "auth" && <p className="mt-2 text-sm text-danger">{error}</p>}
+            {error && error !== "auth" && <p className="mt-2 text-sm font-medium text-danger">{error}</p>}
           </div>
           )}
 
@@ -408,18 +418,20 @@ export function ProductDetail({ product, isLoggedIn = false }: { product: Produc
               </div>
             </div>
           ) : (
-            <div className="flex items-center gap-3">
-              <div className="flex items-center rounded-lg border bg-gray-50">
+            <div className="flex items-stretch gap-2">
+              <div className="flex items-center rounded-lg border border-border bg-surface">
                 <button
                   onClick={() => setQty((q) => Math.max(1, q - 1))}
                   className="px-3 py-2.5 text-lg font-medium leading-none"
+                  aria-label="Хасах"
                 >
                   −
                 </button>
-                <span className="w-8 text-center text-sm font-semibold">{qty}</span>
+                <span className="w-7 text-center text-sm font-semibold">{qty}</span>
                 <button
                   onClick={() => setQty((q) => Math.min(10, Math.max(1, selectedSizeStock ?? product.totalStock), q + 1))}
                   className="px-3 py-2.5 text-lg font-medium leading-none"
+                  aria-label="Нэмэх"
                 >
                   +
                 </button>
@@ -428,18 +440,11 @@ export function ProductDetail({ product, isLoggedIn = false }: { product: Produc
                 onClick={() => add(false)}
                 disabled={soldOut}
                 className={classNames(
-                  "flex-1 rounded-lg py-3 text-sm font-semibold uppercase tracking-wider transition",
-                  soldOut ? "cursor-not-allowed bg-gray-200 text-gray-400" : "bg-[#1A1A1A] text-white"
+                  "flex-1 rounded-lg text-sm font-semibold uppercase tracking-wider transition",
+                  soldOut ? "cursor-not-allowed bg-border text-muted" : "bg-foreground text-white"
                 )}
               >
                 {soldOut ? "Дууссан" : "Сагсанд нэмэх"}
-              </button>
-              <button
-                onClick={() => add(true)}
-                disabled={soldOut}
-                className="rounded-lg border border-accent bg-accent px-4 py-3 text-sm font-semibold text-white disabled:opacity-40"
-              >
-                Авах
               </button>
             </div>
           )}

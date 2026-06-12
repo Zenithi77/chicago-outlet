@@ -12,40 +12,47 @@ export function ProductCard({ product }: { product: Product }) {
   const addItem = useCart((s) => s.addItem);
   const [activeColor, setActiveColor] = useState(0);
   const [activeImg, setActiveImg] = useState(0);
+  const [showSizes, setShowSizes] = useState(false);
+  const [added, setAdded] = useState(false);
   const fp = finalPrice(product);
   const soldOut = product.totalStock <= 0;
   const lowStock = product.totalStock > 0 && product.totalStock <= 5;
   const color = product.colors[activeColor] ?? { name: "", hex: "#000000" };
   const seed = product.images[activeImg] ?? product.slug;
 
-  const quickAdd = (e: React.MouseEvent) => {
-    e.preventDefault();
-    e.stopPropagation();
-    if (soldOut) return;
-    // Pick first in-stock size if sizeStocks defined, else middle size, else empty
-    let chosenSize = "";
-    let chosenStock = product.totalStock;
-    if (product.sizeStocks && product.sizeStocks.length > 0) {
-      const inStock = product.sizeStocks.find((s) => s.stock > 0);
-      if (!inStock) return;
-      chosenSize = inStock.size;
-      chosenStock = inStock.stock;
-    } else if (product.sizes.length > 0) {
-      chosenSize = product.sizes[Math.floor(product.sizes.length / 2)] ?? product.sizes[0];
-    }
+  const stockForSize = (size: string) =>
+    product.sizeStocks?.find((s) => s.size === size)?.stock ??
+    product.totalStock;
+
+  const addWithSize = (size: string, stock: number) => {
     addItem({
       productId: product.id,
       slug: product.slug,
       name: product.name,
       sku: product.id,
-      size: chosenSize,
+      size,
       color: color.name,
       colorHex: color.hex,
       qty: 1,
       unitPrice: fp,
       image: product.images[0] ?? product.slug,
-      maxStock: Math.max(1, chosenStock),
+      maxStock: Math.max(1, stock),
     });
+    setShowSizes(false);
+    setAdded(true);
+    setTimeout(() => setAdded(false), 1500);
+  };
+
+  const quickAdd = (e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    if (soldOut) return;
+    // If the product has sizes, ask the user to pick one first
+    if (product.sizes.length > 0 || (product.sizeStocks?.length ?? 0) > 0) {
+      setShowSizes((v) => !v);
+      return;
+    }
+    addWithSize("", product.totalStock);
   };
 
   return (
@@ -126,20 +133,71 @@ export function ProductCard({ product }: { product: Product }) {
           ))}
         </div>
 
-        <button
-          type="button"
-          onClick={quickAdd}
-          disabled={soldOut}
-          className={classNames(
-            "mt-auto w-full rounded-md py-2 text-xs font-semibold uppercase tracking-wider transition",
-            soldOut
-              ? "cursor-not-allowed bg-border text-muted"
-              : "bg-foreground text-white hover:bg-accent hover:text-foreground"
+        <div className="relative mt-auto" style={{ marginTop: "0.75rem" }}>
+          {/* Size picker popup */}
+          {showSizes && (
+            <div className="absolute bottom-full left-0 right-0 z-20 mb-2 rounded-lg border border-border bg-white p-2.5 shadow-lg">
+              <div className="mb-1.5 flex items-center justify-between">
+                <span className="text-[11px] font-semibold uppercase tracking-wider text-muted">
+                  Размер сонгох
+                </span>
+                <button
+                  type="button"
+                  onClick={() => setShowSizes(false)}
+                  className="text-xs text-muted hover:text-foreground"
+                  aria-label="Хаах"
+                >
+                  ✕
+                </button>
+              </div>
+              <div className="flex flex-wrap gap-1.5">
+                {(product.sizes.length > 0
+                  ? product.sizes
+                  : (product.sizeStocks ?? []).map((s) => s.size)
+                ).map((size) => {
+                  const st = stockForSize(size);
+                  const out = st <= 0;
+                  return (
+                    <button
+                      key={size}
+                      type="button"
+                      disabled={out}
+                      onClick={(e) => {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        addWithSize(size, st);
+                      }}
+                      className={classNames(
+                        "min-w-[2.25rem] rounded-md border px-2 py-1.5 text-xs font-semibold transition",
+                        out
+                          ? "cursor-not-allowed border-border text-muted line-through"
+                          : "border-border hover:border-foreground hover:bg-foreground hover:text-white"
+                      )}
+                    >
+                      {size}
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
           )}
-          style={{ marginTop: "0.75rem" }}
-        >
-          {soldOut ? "Дууссан" : "Сагсанд нэмэх"}
-        </button>
+
+          <button
+            type="button"
+            onClick={quickAdd}
+            disabled={soldOut}
+            className={classNames(
+              "w-full rounded-md py-2 text-xs font-semibold uppercase tracking-wider transition",
+              soldOut
+                ? "cursor-not-allowed bg-border text-muted"
+                : added
+                ? "bg-success text-white"
+                : "bg-foreground text-white hover:bg-accent hover:text-foreground"
+            )}
+          >
+            {soldOut ? "Дууссан" : added ? "Нэмэгдлээ ✓" : "Сагсанд нэмэх"}
+          </button>
+        </div>
       </div>
     </div>
   );

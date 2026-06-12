@@ -28,10 +28,12 @@ export function ProductImage({
   seed,
   label,
   className,
+  fit = "cover",
 }: {
   seed: string;
   label?: string;
   className?: string;
+  fit?: "cover" | "contain";
 }) {
   const [broken, setBroken] = useState(false);
   const isUrl = /^https?:\/\//i.test(seed);
@@ -45,7 +47,7 @@ export function ProductImage({
         alt={label ?? "Бараа"}
         loading="lazy"
         onError={() => setBroken(true)}
-        className={classNames("object-cover", className)}
+        className={classNames(fit === "contain" ? "object-contain" : "object-cover", className)}
       />
     );
   }
