@@ -19,7 +19,7 @@ export const BRAND = {
   freeShippingThreshold: 150000,
   codFee: 5000,
   expressFee: 10000,
-  deliveryFee: 10000,
+  deliveryFee: 0,
 } as const;
 
 export const colors = {
