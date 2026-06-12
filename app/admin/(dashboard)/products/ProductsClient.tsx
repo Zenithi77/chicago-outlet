@@ -74,6 +74,7 @@ export type ProductRow = {
   season: string;
   tags: string[];
   sizes: string[];
+  sizePrices: Array<{ size: string; price: number }>;
   colors: Array<{ name: string; hex: string; stock: number }>;
   shortDescription: string;
   description: string;
@@ -527,7 +528,9 @@ function ProductForm({
     fit: editProduct?.fit ?? "regular",
     price: editProduct ? String(editProduct.price) : "",
     discount_percent: String(editProduct?.discountPercent ?? "0"),
-    sizes: editProduct?.sizes?.join(", ") ?? "",
+    sizes: editProduct?.sizePrices?.length
+      ? editProduct.sizePrices.map(sp => `${sp.size}|${sp.price}`).join("\n")
+      : editProduct?.sizes?.map(s => `${s}|0`).join("\n") ?? "",
     images: editProduct?.images?.join(", ") ?? "",
     tags: editProduct?.tags?.join(", ") ?? "",
     material: editProduct?.material ?? "",
@@ -596,7 +599,7 @@ function ProductForm({
         subcategory: data.subcategory || prev.subcategory,
         material: data.material || prev.material,
         gender: data.gender || prev.gender,
-        sizes: data.sizes?.length ? data.sizes.join(", ") : prev.sizes,
+        sizes: data.sizes?.length ? data.sizes.map(s => `${s}|0`).join("\n") : prev.sizes,
         images: data.images?.length ? data.images.join(", ") : prev.images,
         colors: data.colors?.length
           ? data.colors.map((c) => `${c.name}|${c.hex}|0`).join("\n")
@@ -1094,18 +1097,20 @@ function ProductForm({
         />
       </label>
 
-      {/* 6. Нөөц, Хэмжээ */}
+      {/* 6. Хэмжээ & үнэ */}
       {isApparel && (
-        <label className="block">
-          <span className={lbl}>Хэмжээнүүд (таслалаар)</span>
-          <input
+        <div className="block sm:col-span-2 lg:col-span-3">
+          <span className={lbl}>Хэмжээ & үнэ (нэг мөрт нэг хэмжээ, формат: <code className="text-accent-dark">Хэмжээ|Үнэ</code>)</span>
+          <textarea
             name="sizes"
-            placeholder="S, M, L, XL"
+            rows={5}
+            placeholder={"XS|45000\nS|48000\nM|50000\nL|52000\nXL|55000"}
             value={v.sizes}
             onChange={(e) => set("sizes", e.target.value)}
-            className={field}
+            className={field + " font-mono text-xs"}
           />
-        </label>
+          <p className="mt-1 text-xs text-muted">Жишээ: <code>M|50000</code> → M хэмжээний үнэ 50,000₮. Хэмжээнүүд тусдаа мөрт байна.</p>
+        </div>
       )}
 
       {/* Таг, Материал, Цуглуулга, Улирал */}

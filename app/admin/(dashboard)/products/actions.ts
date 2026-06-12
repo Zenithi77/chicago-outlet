@@ -32,6 +32,24 @@ function csv(value: FormDataEntryValue | null): string[] {
     .filter(Boolean);
 }
 
+// Parse "size|price" lines into size_prices jsonb and sizes text[] array.
+function parseSizePrices(value: FormDataEntryValue | null): {
+  size_prices: { size: string; price: number }[];
+  sizes: string[];
+} {
+  const size_prices = String(value ?? "")
+    .split("\n")
+    .map((line) => line.trim())
+    .filter(Boolean)
+    .map((line) => {
+      const [size, priceStr] = line.split("|").map((s) => s.trim());
+      return { size: size || "", price: Number(priceStr) || 0 };
+    })
+    .filter((sp) => sp.size);
+  const sizes = size_prices.map((sp) => sp.size);
+  return { size_prices, sizes };
+}
+
 // Parse "Name|#hex|stock" lines into the colors jsonb shape.
 function parseColors(value: FormDataEntryValue | null): {
   name: string;
@@ -92,6 +110,7 @@ export async function createProduct(
 
   const colors = parseColors(formData.get("colors"));
   const { branch_stock, is_online, total_stock } = parseBranchStock(formData);
+  const { size_prices, sizes } = parseSizePrices(formData.get("sizes"));
 
   let slug = String(formData.get("slug") ?? "").trim() || slugify(name);
 
@@ -134,7 +153,8 @@ export async function createProduct(
     currency: "MNT",
     discount_percent: Number(formData.get("discount_percent")) || 0,
     images: csv(formData.get("images")),
-    sizes: csv(formData.get("sizes")),
+    sizes,
+    size_prices,
     colors,
     tags: csv(formData.get("tags")),
     is_featured: formData.get("is_featured") === "on",
@@ -182,6 +202,7 @@ export async function updateProduct(
   const supabase = await createClient();
   const colors = parseColors(formData.get("colors"));
   const { branch_stock, is_online, total_stock } = parseBranchStock(formData);
+  const { size_prices: patchSizePrices, sizes: patchSizes } = parseSizePrices(formData.get("sizes"));
 
   const patch = {
     name,
@@ -194,7 +215,8 @@ export async function updateProduct(
     price,
     discount_percent: Number(formData.get("discount_percent")) || 0,
     images: csv(formData.get("images")),
-    sizes: csv(formData.get("sizes")),
+    sizes: patchSizes,
+    size_prices: patchSizePrices,
     colors,
     tags: csv(formData.get("tags")),
     is_featured: formData.get("is_featured") === "on",

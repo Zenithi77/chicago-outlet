@@ -9,7 +9,7 @@ export default async function AdminProductsPage() {
   const { data, error } = await supabase
     .from("products")
     .select(
-      "id, sku, name, slug, brand, category, subcategory, gender, price, discount_percent, total_stock, is_active, is_featured, is_new_arrival, images, collection, branch_stock, is_online, material, fit, season, tags, sizes, colors, short_description, description, care_instructions"
+      "id, sku, name, slug, brand, category, subcategory, gender, price, discount_percent, total_stock, is_active, is_featured, is_new_arrival, images, collection, branch_stock, is_online, material, fit, season, tags, sizes, size_prices, colors, short_description, description, care_instructions"
     )
     .order("created_at", { ascending: false });
 
@@ -37,6 +37,7 @@ export default async function AdminProductsPage() {
     season: (p.season as string) ?? "",
     tags: (p.tags as string[]) ?? [],
     sizes: (p.sizes as string[]) ?? [],
+    sizePrices: (p.size_prices as Array<{size: string; price: number}>) ?? [],
     colors: (p.colors as Array<{name: string; hex: string; stock: number}>) ?? [],
     shortDescription: (p.short_description as string) ?? "",
     description: (p.description as string) ?? "",

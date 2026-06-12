@@ -16,7 +16,7 @@ export default async function AdminOrdersPage() {
       `id, created_at, status, payment_status, total, subtotal, shipping_fee, discount_amount, coupon_code,
        customer_name, customer_email, customer_phone, customer_address,
        payment_method, shipping_method, tracking_number, notes,
-       order_items(product_name, sku, size, color, qty, unit_price, subtotal)`
+       order_items(product_name, sku, size, color, qty, unit_price, subtotal, image)`
     )
     .order("created_at", { ascending: false })
     .limit(200);
@@ -49,6 +49,7 @@ export default async function AdminOrdersPage() {
       qty: i.qty ?? 1,
       unitPrice: i.unit_price ?? 0,
       subtotal: i.subtotal ?? 0,
+      image: i.image ?? "",
     })),
   }));
 

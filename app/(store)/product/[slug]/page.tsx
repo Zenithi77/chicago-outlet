@@ -3,6 +3,7 @@ import { getProductBySlug } from "@/lib/data/products";
 import { ProductDetail } from "@/components/ProductDetail";
 import { ProductCard } from "@/components/ProductCard";
 import { createClient } from "@/lib/supabase/server";
+import { getProfile } from "@/lib/supabase/auth";
 import type { Product } from "@/lib/types";
 
 export const dynamic = "force-dynamic";
@@ -23,6 +24,7 @@ function mapRow(data: Record<string, unknown>): Product {
     discountPercent: Number(data.discount_percent ?? 0),
     images: (data.images as string[]) ?? [],
     sizes: (data.sizes as string[]) ?? [],
+    sizePrices: (data.size_prices as Product["sizePrices"]) ?? [],
     colors: (data.colors as Product["colors"]) ?? [],
     tags: (data.tags as string[]) ?? [],
     isFeatured: Boolean(data.is_featured),
@@ -103,11 +105,12 @@ export default async function ProductPage({
   }
   if (!product) notFound();
 
-  const related = await fetchRelated(product);
+  const [related, profile] = await Promise.all([fetchRelated(product), getProfile()]);
+  const isLoggedIn = !!profile;
 
   return (
     <div className="animate-fade-up">
-      <ProductDetail product={product} />
+      <ProductDetail product={product} isLoggedIn={isLoggedIn} />
 
       {related.length > 0 && (
       <section className="container-page py-12">

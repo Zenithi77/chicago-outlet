@@ -17,6 +17,11 @@ export interface ProductColor {
   stock: number;
 }
 
+export interface ProductSizePrice {
+  size: string;
+  price: number;
+}
+
 export interface Product {
   id: string; // SKU CO-YYYY-NNNN
   name: string;
@@ -32,6 +37,7 @@ export interface Product {
   discountPercent: number;
   images: string[];
   sizes: string[];
+  sizePrices: ProductSizePrice[]; // per-size pricing; empty = use base price for all
   colors: ProductColor[];
   tags: string[];
   isFeatured: boolean;

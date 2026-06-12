@@ -4,7 +4,7 @@ import { useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import Link from "next/link";
 import type { Product } from "@/lib/types";
-import { finalPrice, savings, formatMNT, classNames } from "@/lib/utils";
+import { formatMNT, classNames } from "@/lib/utils";
 import { useCart } from "@/lib/store/cart";
 import { ProductImage } from "@/components/ProductImage";
 import { Badge } from "@/components/Badge";
@@ -12,7 +12,7 @@ import { HeartIcon } from "@/components/Icons";
 
 const TABS = ["Тайлбар", "Хэмжээний заавар", "Материал & Арчилгаа"];
 
-export function ProductDetail({ product }: { product: Product }) {
+export function ProductDetail({ product, isLoggedIn = false }: { product: Product; isLoggedIn?: boolean }) {
   const addItem = useCart((s) => s.addItem);
   const [colorIdx, setColorIdx] = useState(0);
   const [size, setSize] = useState<string | null>(
@@ -26,8 +26,18 @@ export function ProductDetail({ product }: { product: Product }) {
   const [mounted, setMounted] = useState(false);
   useEffect(() => setMounted(true), []);
 
-  const fp = finalPrice(product);
-  const save = savings(product);
+  // Per-size price: if sizePrices has entry for selected size, use it; else base price
+  const hasSizePrices = product.sizePrices && product.sizePrices.length > 0;
+  const selectedSizePrice = hasSizePrices && size
+    ? product.sizePrices.find((sp) => sp.size === size)?.price ?? product.price
+    : product.price;
+  const effectiveBasePrice = hasSizePrices && size ? selectedSizePrice : product.price;
+
+  // Apply discount on top of effective base price
+  const fp = product.discountPercent > 0
+    ? Math.round(effectiveBasePrice * (1 - product.discountPercent / 100))
+    : effectiveBasePrice;
+  const save = effectiveBasePrice - fp;
   const hasColors = product.colors.length > 0;
   const hasSizes = product.sizes.length > 0;
   const color = hasColors
@@ -36,6 +46,10 @@ export function ProductDetail({ product }: { product: Product }) {
   const soldOut = product.totalStock <= 0;
 
   const add = (buyNow = false) => {
+    if (!isLoggedIn) {
+      setError("auth");
+      return;
+    }
     if (hasSizes && !size) {
       setError("Хэмжээгээ сонгоно уу.");
       return;
@@ -177,22 +191,30 @@ export function ProductDetail({ product }: { product: Product }) {
               <p className="text-sm font-medium">Хэмжээ</p>
             </div>
             <div className="flex flex-wrap gap-2">
-              {product.sizes.map((s) => (
-                <button
-                  key={s}
-                  onClick={() => { setSize(s); setError(""); }}
-                  className={classNames(
-                    "min-w-11 rounded-md border px-3 py-2 text-sm font-medium transition",
-                    size === s
-                      ? "border-foreground bg-foreground text-white"
-                      : "bg-surface hover:border-foreground"
-                  )}
-                >
-                  {s}
-                </button>
-              ))}
+              {product.sizes.map((s) => {
+                const sp = product.sizePrices?.find((p) => p.size === s);
+                return (
+                  <button
+                    key={s}
+                    onClick={() => { setSize(s); setError(""); }}
+                    className={classNames(
+                      "flex min-w-11 flex-col items-center rounded-md border px-3 py-2 text-sm font-medium transition",
+                      size === s
+                        ? "border-foreground bg-foreground text-white"
+                        : "bg-surface hover:border-foreground"
+                    )}
+                  >
+                    <span>{s}</span>
+                    {sp && sp.price > 0 && (
+                      <span className={classNames("text-[10px] font-normal", size === s ? "text-white/80" : "text-muted")}>
+                        {formatMNT(sp.price)}
+                      </span>
+                    )}
+                  </button>
+                );
+              })}
             </div>
-            {error && <p className="mt-2 text-sm text-danger">{error}</p>}
+            {error && error !== "auth" && <p className="mt-2 text-sm text-danger">{error}</p>}
           </div>
           )}
 
@@ -247,6 +269,27 @@ export function ProductDetail({ product }: { product: Product }) {
             </button>
           </div>
 
+          {/* Auth prompt when not logged in */}
+          {error === "auth" && (
+            <div className="mt-3 rounded-lg border border-accent/40 bg-accent/5 p-4 text-sm">
+              <p className="font-medium">Захиалга өгөхийн тулд нэвтрэнэ үү.</p>
+              <div className="mt-3 flex gap-3">
+                <Link
+                  href={`/account?next=/product/${product.slug}`}
+                  className="rounded-md bg-foreground px-4 py-2 text-sm font-semibold text-white hover:bg-accent hover:text-foreground"
+                >
+                  Нэвтрэх
+                </Link>
+                <Link
+                  href={`/account?next=/product/${product.slug}`}
+                  className="rounded-md border px-4 py-2 text-sm font-semibold hover:border-foreground"
+                >
+                  Бүртгүүлэх
+                </Link>
+              </div>
+            </div>
+          )}
+
           {/* Tabs */}
           <div className="mt-8">
             <div className="flex gap-1 overflow-x-auto border-b text-sm no-scrollbar">
@@ -293,41 +336,61 @@ export function ProductDetail({ product }: { product: Product }) {
       {/* Sticky mobile footer — rendered in body via portal to avoid transform/overflow issues */}
       {mounted && createPortal(
         <div className="fixed bottom-0 left-0 right-0 z-[999] border-t bg-white/95 backdrop-blur-sm px-4 py-3 lg:hidden">
-          <div className="flex items-center gap-3">
-            <div className="flex items-center rounded-lg border bg-gray-50">
+          {error === "auth" ? (
+            <div className="rounded-lg border border-accent/40 bg-accent/5 px-4 py-3 text-sm">
+              <p className="font-medium">Захиалга өгөхийн тулд нэвтрэнэ үү.</p>
+              <div className="mt-2 flex gap-2">
+                <Link
+                  href={`/account?next=/product/${product.slug}`}
+                  className="flex-1 rounded-lg bg-foreground py-2.5 text-center text-sm font-semibold text-white"
+                >
+                  Нэвтрэх
+                </Link>
+                <Link
+                  href={`/account?next=/product/${product.slug}`}
+                  className="flex-1 rounded-lg border py-2.5 text-center text-sm font-semibold"
+                >
+                  Бүртгүүлэх
+                </Link>
+              </div>
+            </div>
+          ) : (
+            <div className="flex items-center gap-3">
+              <div className="flex items-center rounded-lg border bg-gray-50">
+                <button
+                  onClick={() => setQty((q) => Math.max(1, q - 1))}
+                  className="px-3 py-2.5 text-lg font-medium leading-none"
+                >
+                  −
+                </button>
+                <span className="w-8 text-center text-sm font-semibold">{qty}</span>
+                <button
+                  onClick={() => setQty((q) => Math.min(10, product.totalStock, q + 1))}
+                  className="px-3 py-2.5 text-lg font-medium leading-none"
+                >
+                  +
+                </button>
+              </div>
               <button
-                onClick={() => setQty((q) => Math.max(1, q - 1))}
-                className="px-3 py-2.5 text-lg font-medium leading-none"
+                onClick={() => add(false)}
+                disabled={soldOut}
+                className={classNames(
+                  "flex-1 rounded-lg py-3 text-sm font-semibold uppercase tracking-wider transition",
+                  soldOut ? "cursor-not-allowed bg-gray-200 text-gray-400" : "bg-[#1A1A1A] text-white"
+                )}
               >
-                −
+                {soldOut ? "Дууссан" : "Сагсанд нэмэх"}
               </button>
-              <span className="w-8 text-center text-sm font-semibold">{qty}</span>
               <button
-                onClick={() => setQty((q) => Math.min(10, product.totalStock, q + 1))}
-                className="px-3 py-2.5 text-lg font-medium leading-none"
+                onClick={() => add(true)}
+                disabled={soldOut}
+                className="rounded-lg border border-accent bg-accent px-4 py-3 text-sm font-semibold text-white disabled:opacity-40"
               >
-                +
+                Авах
               </button>
             </div>
-            <button
-              onClick={() => add(false)}
-              disabled={soldOut}
-              className={classNames(
-                "flex-1 rounded-lg py-3 text-sm font-semibold uppercase tracking-wider transition",
-                soldOut ? "cursor-not-allowed bg-gray-200 text-gray-400" : "bg-[#1A1A1A] text-white"
-              )}
-            >
-              {soldOut ? "Дууссан" : "Сагсанд нэмэх"}
-            </button>
-            <button
-              onClick={() => add(true)}
-              disabled={soldOut}
-              className="rounded-lg border border-accent bg-accent px-4 py-3 text-sm font-semibold text-white disabled:opacity-40"
-            >
-              Авах
-            </button>
-          </div>
-          {error && <p className="mt-1.5 text-center text-xs text-red-500">{error}</p>}
+          )}
+          {error && error !== "auth" && <p className="mt-1.5 text-center text-xs text-red-500">{error}</p>}
         </div>,
         document.body
       )}

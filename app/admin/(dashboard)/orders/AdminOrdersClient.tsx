@@ -3,6 +3,7 @@
 import { useState, useTransition } from "react";
 import { formatMNT, formatDate, classNames } from "@/lib/utils";
 import { CloseIcon } from "@/components/Icons";
+import { ProductImage } from "@/components/ProductImage";
 import { updateOrderStatus } from "./actions";
 
 type OrderItem = {
@@ -13,6 +14,7 @@ type OrderItem = {
   qty: number;
   unitPrice: number;
   subtotal: number;
+  image?: string;
 };
 
 type Order = {
@@ -207,10 +209,19 @@ export function AdminOrdersClient({ initialOrders }: { initialOrders: Order[] })
                 {selected.items.map((i, idx) => (
                   <tr key={idx}>
                     <td className="py-2">
-                      {i.productName}
-                      <span className="block text-xs text-muted">
-                        {[i.color, i.size].filter(Boolean).join(" / ")}
-                      </span>
+                      <div className="flex items-center gap-2">
+                        {i.image && (
+                          <div className="h-10 w-9 shrink-0 overflow-hidden rounded border">
+                            <ProductImage seed={i.image} label={i.productName} className="h-full w-full" />
+                          </div>
+                        )}
+                        <div>
+                          {i.productName}
+                          <span className="block text-xs text-muted">
+                            {[i.color, i.size].filter(Boolean).join(" / ")}
+                          </span>
+                        </div>
+                      </div>
                     </td>
                     <td className="py-2 text-center">{i.qty}</td>
                     <td className="py-2 text-right">{formatMNT(i.subtotal)}</td>

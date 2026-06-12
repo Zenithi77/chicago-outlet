@@ -41,6 +41,7 @@ async function fetchProducts(): Promise<Product[]> {
       discountPercent,
       images: row.images ?? [],
       sizes: row.sizes ?? [],
+      sizePrices: row.size_prices ?? [],
       colors: row.colors ?? [],
       tags: row.tags ?? [],
       isFeatured: row.is_featured ?? false,
