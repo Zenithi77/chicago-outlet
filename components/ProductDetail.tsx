@@ -9,7 +9,7 @@ import { ProductImage } from "@/components/ProductImage";
 import { Badge } from "@/components/Badge";
 import { StarIcon, HeartIcon } from "@/components/Icons";
 
-const TABS = ["Тайлбар", "Хэмжээний заавар", "Материал & Арчилгаа", "Хүргэлт & Буцаалт"];
+const TABS = ["Тайлбар", "Хэмжээний заавар", "Материал & Арчилгаа"];
 
 export function ProductDetail({ product }: { product: Product }) {
   const addItem = useCart((s) => s.addItem);
@@ -284,20 +284,14 @@ export function ProductDetail({ product }: { product: Product }) {
                   <p><b>Арчилгаа:</b> {product.careInstructions}</p>
                 </div>
               )}
-              {tab === 3 && (
-                <div className="space-y-1">
-                  <p>Стандарт хүргэлт: 1–3 ажлын өдөр (₮150,000+ үнэгүй).</p>
-                  <p>Шуурхай хүргэлт: 1 өдөр (+₮8,000).</p>
-                  <p>14 хоногийн дотор асуудалгүй буцаалт.</p>
-                </div>
-              )}
+
             </div>
           </div>
         </div>
       </div>
 
       {/* Sticky mobile footer */}
-      <div className="fixed bottom-0 inset-x-0 z-30 border-t bg-surface/95 backdrop-blur-sm px-4 py-3 lg:hidden">
+      <div className="fixed bottom-0 inset-x-0 z-50 border-t bg-surface/95 backdrop-blur-sm px-4 py-3 lg:hidden" style={{position:'fixed',bottom:0,left:0,right:0}}>
         <div className="flex items-center gap-3">
           {/* Qty */}
           <div className="flex items-center rounded-lg border bg-background">

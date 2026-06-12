@@ -33,33 +33,7 @@ export function Footer() {
           </ul>
         </div>
 
-        <div>
-          <p className="mb-3 text-xs font-semibold uppercase tracking-wider text-accent">
-            Тусаламж
-          </p>
-          <ul className="space-y-2 text-sm text-white/70">
-            <li>
-              <Link href="/shop" className="hover:text-accent">
-                Хүргэлт &amp; Буцаалт
-              </Link>
-            </li>
-            <li>
-              <Link href="/account" className="hover:text-accent">
-                Миний бүртгэл
-              </Link>
-            </li>
-            <li>
-              <Link href="/account" className="hover:text-accent">
-                Захиалга хянах
-              </Link>
-            </li>
-            <li>
-              <Link href="/admin" className="hover:text-accent">
-                Админ нэвтрэх
-              </Link>
-            </li>
-          </ul>
-        </div>
+
 
         <div>
           <p className="mb-3 text-xs font-semibold uppercase tracking-wider text-accent">
