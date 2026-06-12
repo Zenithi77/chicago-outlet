@@ -27,6 +27,26 @@ function ShopContent({ products }: { products: Product[] }) {
   const categoryParam = params.get("category") ?? "";
   const subcategoryParam = params.get("subcategory") ?? "";
   const collectionParam = params.get("collection") ?? "";
+  const brandParam = params.get("brand") ?? "";
+
+  // URL may send either a slug ("huvtsas") or a Mongolian name ("Хувцас").
+  // Normalize to the name used in product data.
+  const normalizeCat = (val: string) => {
+    if (!val) return "";
+    const found = CATEGORIES.find((c) => c.slug === val || c.name === val || c.nameMn === val);
+    return found ? found.name : val;
+  };
+
+  const normalizeSub = (val: string) => {
+    if (!val) return val;
+    for (const cat of CATEGORIES) {
+      if (cat.children) {
+        const found = cat.children.find((s) => s.slug === val || s.name === val || s.nameMn === val);
+        if (found) return found.nameMn;
+      }
+    }
+    return val;
+  };
 
   // Live price bounds derived from the current product list. These shift as
   // products are added / removed so the slider always covers the real range.
@@ -41,10 +61,10 @@ function ShopContent({ products }: { products: Product[] }) {
   const [sort, setSort] = useState("newest");
   const [activeBranch, setActiveBranch] = useState<string>(branchParam);
   const [activeCats, setActiveCats] = useState<string[]>(
-    categoryParam ? [categoryParam] : []
+    categoryParam ? [normalizeCat(categoryParam)] : []
   );
   const [activeSubs, setActiveSubs] = useState<string[]>(
-    subcategoryParam ? [subcategoryParam] : []
+    subcategoryParam ? [normalizeSub(subcategoryParam)] : []
   );
   const [activeSizes, setActiveSizes] = useState<string[]>([]);
   const [minPrice, setMinPrice] = useState(dataMin);
@@ -92,6 +112,9 @@ function ShopContent({ products }: { products: Product[] }) {
     }
     if (collectionParam) {
       list = list.filter((p) => p.collection === collectionParam);
+    }
+    if (brandParam) {
+      list = list.filter((p) => p.brand.toLowerCase() === brandParam.toLowerCase());
     }
     if (activeCats.length) {
       list = list.filter((p) => activeCats.includes(p.category));

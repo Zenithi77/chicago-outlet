@@ -557,9 +557,9 @@ type LinkMode = "custom" | "shop" | "sale" | "category" | "subcategory" | "gende
 
 function buildHref(mode: LinkMode, cat: string, sub: string, gender: string, brand: string): string {
   if (mode === "shop") return "/shop";
-  if (mode === "sale") return "/shop?sale=true";
+  if (mode === "sale") return "/shop?gender=sale";
   if (mode === "category") return cat ? `/shop?category=${cat}` : "/shop";
-  if (mode === "subcategory") return cat && sub ? `/shop?category=${cat}&sub=${sub}` : "/shop";
+  if (mode === "subcategory") return cat && sub ? `/shop?category=${cat}&subcategory=${sub}` : "/shop";
   if (mode === "gender") return cat && gender ? `/shop?category=${cat}&gender=${gender}` : "/shop";
   if (mode === "brand") return brand ? `/shop?brand=${encodeURIComponent(brand)}` : "/shop";
   return "";
@@ -569,11 +569,10 @@ function detectMode(href: string): { mode: LinkMode; cat: string; sub: string; g
   try {
     const u = new URL(href, "http://x");
     const cat = u.searchParams.get("category") ?? "";
-    const sub = u.searchParams.get("sub") ?? "";
+    const sub = u.searchParams.get("subcategory") ?? "";
     const gender = u.searchParams.get("gender") ?? "";
     const brand = u.searchParams.get("brand") ?? "";
-    const sale = u.searchParams.get("sale");
-    if (sale === "true") return { mode: "sale", cat, sub, gender, brand };
+    if (gender === "sale") return { mode: "sale", cat, sub, gender: "", brand };
     if (brand) return { mode: "brand", cat, sub, gender, brand };
     if (gender && cat) return { mode: "gender", cat, sub, gender, brand };
     if (sub && cat) return { mode: "subcategory", cat, sub, gender, brand };
