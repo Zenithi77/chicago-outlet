@@ -117,6 +117,22 @@ export function AdminOrdersClient({ initialOrders }: { initialOrders: Order[] })
             </div>
             <p className="mt-2 text-sm font-medium">{o.customer.name}</p>
             <p className="text-xs text-muted">{formatDate(o.createdAt)} · {o.items.reduce((n, i) => n + i.qty, 0)} ширхэг</p>
+            {o.items.length > 0 && (
+              <div className="mt-2 flex items-center gap-2">
+                <div className="flex -space-x-2">
+                  {o.items.slice(0, 3).map((i, idx) =>
+                    i.image ? (
+                      <div key={idx} className="h-10 w-9 overflow-hidden rounded border-2 border-surface">
+                        <ProductImage seed={i.image} label={i.productName} className="h-full w-full object-cover" />
+                      </div>
+                    ) : (
+                      <div key={idx} className="h-10 w-9 rounded border-2 border-surface bg-border/30 flex items-center justify-center text-xs">👕</div>
+                    )
+                  )}
+                </div>
+                <p className="text-xs font-medium truncate flex-1">{o.items[0].productName}{o.items.length > 1 && ` +${o.items.length - 1}`}</p>
+              </div>
+            )}
             <div className="mt-2 flex items-center justify-between">
               <span className={classNames("rounded-full px-2 py-0.5 text-xs",
                 o.paymentStatus === "paid" ? "bg-green-100 text-green-700" : "bg-yellow-100 text-yellow-700")}>
@@ -147,13 +163,42 @@ export function AdminOrdersClient({ initialOrders }: { initialOrders: Order[] })
             {filtered.length === 0 && (
               <tr><td colSpan={8} className="px-4 py-10 text-center text-sm text-muted">Захиалга алга.</td></tr>
             )}
-            {filtered.map((o) => (
+            {filtered.map((o) => {
+              const totalQty = o.items.reduce((n, i) => n + i.qty, 0);
+              return (
               <tr key={o.id} className="cursor-pointer hover:bg-background/50" onClick={() => setSelected(o)}>
                 <td className="px-4 py-3 font-mono text-xs font-semibold">{o.id}</td>
                 <td className="px-4 py-3 text-muted">{formatDate(o.createdAt)}</td>
                 <td className="px-4 py-3">{o.customer.name}</td>
                 <td className="px-4 py-3 text-muted">{o.customer.phone}</td>
-                <td className="px-4 py-3 text-muted">{o.items.reduce((n, i) => n + i.qty, 0)} ширхэг</td>
+                <td className="px-4 py-3">
+                  {o.items.length === 0 ? (
+                    <span className="text-xs text-muted italic">Хадгалагдаагүй</span>
+                  ) : (
+                    <div className="flex items-center gap-2">
+                      <div className="flex -space-x-2">
+                        {o.items.slice(0, 3).map((i, idx) =>
+                          i.image ? (
+                            <div key={idx} className="h-9 w-8 overflow-hidden rounded border-2 border-surface">
+                              <ProductImage seed={i.image} label={i.productName} className="h-full w-full object-cover" />
+                            </div>
+                          ) : (
+                            <div key={idx} className="h-9 w-8 rounded border-2 border-surface bg-border/30 flex items-center justify-center text-xs">👕</div>
+                          )
+                        )}
+                        {o.items.length > 3 && (
+                          <div className="h-9 w-8 rounded border-2 border-surface bg-foreground text-white text-[10px] flex items-center justify-center font-bold">
+                            +{o.items.length - 3}
+                          </div>
+                        )}
+                      </div>
+                      <div className="text-xs">
+                        <p className="font-medium truncate max-w-[140px]">{o.items[0].productName}</p>
+                        <p className="text-muted">{totalQty} ширхэг</p>
+                      </div>
+                    </div>
+                  )}
+                </td>
                 <td className="px-4 py-3 font-medium">{formatMNT(o.total)}</td>
                 <td className="px-4 py-3">
                   <span className={classNames("rounded-full px-2 py-0.5 text-xs",
@@ -167,7 +212,8 @@ export function AdminOrdersClient({ initialOrders }: { initialOrders: Order[] })
                   </span>
                 </td>
               </tr>
-            ))}
+              );
+            })}
           </tbody>
         </table>
       </div>

@@ -93,7 +93,7 @@ export default async function HomePage() {
       label: "Захиалга",
       href: "/shop?branch=online",
       seed: heroSettings["hero_online"] || "cat-online",
-      sub: "Хаана ч хүргэлттэй",
+      sub: "Америкаас щууд ",
     },
   ];
 
