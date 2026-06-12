@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import { ProductImage } from "@/components/ProductImage";
 import { finalPrice, formatMNT, classNames } from "@/lib/utils";
 import { CameraIcon, UploadIcon, CloudIcon, CloseIcon } from "@/components/Icons";
-import { CATEGORIES } from "@/lib/data/categories";
+import { BRANDS, CATEGORIES } from "@/lib/data/categories";
 
 // ── Excel import state lives here so it sits above the form ──────────────────
 function useExcelImport(onSuccess: (msg: string) => void) {
