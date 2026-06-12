@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import type { Product } from "@/lib/types";
 import { finalPrice, formatMNT, classNames } from "@/lib/utils";
 import { useCart } from "@/lib/store/cart";
@@ -12,17 +12,29 @@ export function ProductCard({ product }: { product: Product }) {
   const addItem = useCart((s) => s.addItem);
   const [activeColor, setActiveColor] = useState(0);
   const [activeImg, setActiveImg] = useState(0);
-  const [showSizes, setShowSizes] = useState(false);
-  const [added, setAdded] = useState(false);
+  const [showSizePicker, setShowSizePicker] = useState(false);
+  const pickerRef = useRef<HTMLDivElement>(null);
+
+  // Close the popup when clicking outside
+  useEffect(() => {
+    if (!showSizePicker) return;
+    const onClick = (e: MouseEvent) => {
+      if (pickerRef.current && !pickerRef.current.contains(e.target as Node)) {
+        setShowSizePicker(false);
+      }
+    };
+    document.addEventListener("mousedown", onClick);
+    return () => document.removeEventListener("mousedown", onClick);
+  }, [showSizePicker]);
   const fp = finalPrice(product);
   const soldOut = product.totalStock <= 0;
   const lowStock = product.totalStock > 0 && product.totalStock <= 5;
   const color = product.colors[activeColor] ?? { name: "", hex: "#000000" };
   const seed = product.images[activeImg] ?? product.slug;
 
-  const stockForSize = (size: string) =>
-    product.sizeStocks?.find((s) => s.size === size)?.stock ??
-    product.totalStock;
+  const hasSizes =
+    (product.sizeStocks && product.sizeStocks.length > 0) ||
+    product.sizes.length > 0;
 
   const addWithSize = (size: string, stock: number) => {
     addItem({
@@ -38,22 +50,25 @@ export function ProductCard({ product }: { product: Product }) {
       image: product.images[0] ?? product.slug,
       maxStock: Math.max(1, stock),
     });
-    setShowSizes(false);
-    setAdded(true);
-    setTimeout(() => setAdded(false), 1500);
+    setShowSizePicker(false);
   };
 
   const quickAdd = (e: React.MouseEvent) => {
     e.preventDefault();
     e.stopPropagation();
     if (soldOut) return;
-    // If the product has sizes, ask the user to pick one first
-    if (product.sizes.length > 0 || (product.sizeStocks?.length ?? 0) > 0) {
-      setShowSizes((v) => !v);
+    if (hasSizes) {
+      // Always ask for a size — never auto-pick one
+      setShowSizePicker((v) => !v);
       return;
     }
     addWithSize("", product.totalStock);
   };
+
+  const sizeOptions: { size: string; stock: number }[] =
+    product.sizeStocks && product.sizeStocks.length > 0
+      ? product.sizeStocks
+      : product.sizes.map((s) => ({ size: s, stock: product.totalStock }));
 
   return (
     <div className="group flex flex-col">
@@ -133,55 +148,36 @@ export function ProductCard({ product }: { product: Product }) {
           ))}
         </div>
 
-        <div className="relative mt-auto" style={{ marginTop: "0.75rem" }}>
-          {/* Size picker popup */}
-          {showSizes && (
-            <div className="absolute bottom-full left-0 right-0 z-20 mb-2 rounded-lg border border-border bg-white p-2.5 shadow-lg">
-              <div className="mb-1.5 flex items-center justify-between">
-                <span className="text-[11px] font-semibold uppercase tracking-wider text-muted">
-                  Размер сонгох
-                </span>
-                <button
-                  type="button"
-                  onClick={() => setShowSizes(false)}
-                  className="text-xs text-muted hover:text-foreground"
-                  aria-label="Хаах"
-                >
-                  ✕
-                </button>
-              </div>
+        <div ref={pickerRef} className="relative mt-auto" style={{ marginTop: "0.75rem" }}>
+          {showSizePicker && (
+            <div className="absolute bottom-full left-0 z-20 mb-2 w-full rounded-lg border border-border bg-white p-2 shadow-lg">
+              <p className="mb-1.5 px-1 text-[11px] font-semibold uppercase tracking-wider text-muted">
+                Хэмжээ сонгох
+              </p>
               <div className="flex flex-wrap gap-1.5">
-                {(product.sizes.length > 0
-                  ? product.sizes
-                  : (product.sizeStocks ?? []).map((s) => s.size)
-                ).map((size) => {
-                  const st = stockForSize(size);
-                  const out = st <= 0;
-                  return (
-                    <button
-                      key={size}
-                      type="button"
-                      disabled={out}
-                      onClick={(e) => {
-                        e.preventDefault();
-                        e.stopPropagation();
-                        addWithSize(size, st);
-                      }}
-                      className={classNames(
-                        "min-w-[2.25rem] rounded-md border px-2 py-1.5 text-xs font-semibold transition",
-                        out
-                          ? "cursor-not-allowed border-border text-muted line-through"
-                          : "border-border hover:border-foreground hover:bg-foreground hover:text-white"
-                      )}
-                    >
-                      {size}
-                    </button>
-                  );
-                })}
+                {sizeOptions.map(({ size, stock }) => (
+                  <button
+                    key={size}
+                    type="button"
+                    disabled={stock <= 0}
+                    onClick={(e) => {
+                      e.preventDefault();
+                      e.stopPropagation();
+                      addWithSize(size, stock);
+                    }}
+                    className={classNames(
+                      "min-w-[2.25rem] rounded-md border px-2 py-1.5 text-xs font-semibold transition",
+                      stock <= 0
+                        ? "cursor-not-allowed border-border text-muted line-through"
+                        : "border-border hover:border-foreground hover:bg-foreground hover:text-white"
+                    )}
+                  >
+                    {size}
+                  </button>
+                ))}
               </div>
             </div>
           )}
-
           <button
             type="button"
             onClick={quickAdd}
@@ -190,12 +186,10 @@ export function ProductCard({ product }: { product: Product }) {
               "w-full rounded-md py-2 text-xs font-semibold uppercase tracking-wider transition",
               soldOut
                 ? "cursor-not-allowed bg-border text-muted"
-                : added
-                ? "bg-success text-white"
                 : "bg-foreground text-white hover:bg-accent hover:text-foreground"
             )}
           >
-            {soldOut ? "Дууссан" : added ? "Нэмэгдлээ ✓" : "Сагсанд нэмэх"}
+            {soldOut ? "Дууссан" : "Сагсанд нэмэх"}
           </button>
         </div>
       </div>
