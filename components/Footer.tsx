@@ -1,4 +1,4 @@
-import Link from "next/link";
+﻿import Link from "next/link";
 import { BRAND } from "@/lib/brand";
 import { CATEGORIES } from "@/lib/data/categories";
 import { ArrowRightIcon } from "@/components/Icons";
@@ -35,16 +35,30 @@ export function Footer() {
 
         <div>
           <p className="mb-3 text-xs font-semibold uppercase tracking-wider text-accent">
-            Хүргэлт & Буцаалт
+            Тусаламж
           </p>
           <ul className="space-y-2 text-sm text-white/70">
-            <li>Захиалга баталгаажсанаас хойш 48–72 цагийн дотор хүргэлт таны гарт очино.</li>
-            <li>Хямдралтай болон онцгой үнийн бараанд буцаалт хийх боломжгүй.</li>
-            <li>7 хоногийн дотор шошго, боодол бүрэн нөхцөлд өнгө болон размер солих боломжтой.</li>
+            <li>
+              <Link href="/shop" className="hover:text-accent">
+                Хүргэлт &amp; Буцаалт
+              </Link>
+            </li>
+            <li>
+              <Link href="/account" className="hover:text-accent">
+                Миний бүртгэл
+              </Link>
+            </li>
+            <li>
+              <Link href="/account" className="hover:text-accent">
+                Захиалга хянах
+              </Link>
+            </li>
+            <li>
+              <Link href="/admin" className="hover:text-accent">
+                Админ нэвтрэх
+              </Link>
+            </li>
           </ul>
-          <Link href="/account" className="mt-3 inline-block text-xs text-accent underline hover:text-white">
-            Захиалга хянах
-          </Link>
         </div>
 
         <div>
@@ -74,68 +88,7 @@ export function Footer() {
         </div>
       </div>
       <div className="border-t border-white/10 py-5 text-center text-xs text-white/40">
-        © {new Date().getFullYear()} Chicago Outlet. Бүх эрх хуулиар хамгаалагдсан. · Secure Payment · QPay
-      </div>
-    </footer>
-  );
-}
-
-        <div>
-          <p className="mb-3 text-xs font-semibold uppercase tracking-wider text-accent">
-            Дэлгүүр
-          </p>
-          <ul className="space-y-2 text-sm text-white/70">
-            {CATEGORIES.slice(0, 5).map((c) => (
-              <li key={c.slug}>
-                <Link
-                  href={`/shop?category=${encodeURIComponent(c.name)}`}
-                  className="hover:text-accent"
-                >
-                  {c.nameMn}
-                </Link>
-              </li>
-            ))}
-          </ul>
-        </div>
-
-        <div>
-          <p className="mb-3 text-xs font-semibold uppercase tracking-wider text-accent">
-            Тусламж
-          </p>
-          <ul className="space-y-2 text-sm text-white/70">
-            <li><Link href="/shop" className="hover:text-accent">Хүргэлт &amp; Буцаалт</Link></li>
-            <li><Link href="/account" className="hover:text-accent">Миний бүртгэл</Link></li>
-            <li><Link href="/account" className="hover:text-accent">Захиалга хянах</Link></li>
-            <li><Link href="/admin" className="hover:text-accent">Админ нэвтрэх</Link></li>
-          </ul>
-        </div>
-
-        <div>
-          <p className="mb-3 text-xs font-semibold uppercase tracking-wider text-accent">
-            Мэдээлэл авах
-          </p>
-          <p className="text-sm text-white/60">
-            Шинэ цуглуулга, онцгой саналыг хүлээж аваарай.
-          </p>
-          <form className="mt-3 flex">
-            <input
-              type="email"
-              placeholder="И-мэйл хаяг"
-              className="w-full rounded-l-md border-0 bg-white/10 px-3 py-2 text-sm text-white placeholder:text-white/40 outline-none"
-            />
-            <button
-              type="submit"
-              aria-label="Бүртгүүлэх"
-              className="flex items-center justify-center rounded-r-md bg-accent px-4 text-foreground"
-            >
-              <ArrowRightIcon className="h-4 w-4" />
-            </button>
-          </form>
-        </div>
-      </div>
-      <div className="border-t border-white/10 py-5 text-center text-xs text-white/40">
-        © {new Date().getFullYear()} Chicago Outlet. Бүх эрх хуулиар хамгаалагдсан. ·
-        Secure Payment · QPay удахгүй
+        &copy; {new Date().getFullYear()} Chicago Outlet. All rights reserved. &middot; Secure Payment &middot; QPay
       </div>
     </footer>
   );
