@@ -73,7 +73,7 @@ export function ProductCard({ product }: { product: Product }) {
       : product.sizes.map((s) => ({ size: s, stock: product.totalStock }));
 
   return (
-    <div className="group flex flex-col">
+    <div className="group flex h-full flex-col">
       <Link
         href={`/product/${product.slug}`}
         className="relative block aspect-[4/5] overflow-hidden rounded-lg bg-surface"
@@ -102,7 +102,7 @@ export function ProductCard({ product }: { product: Product }) {
         </p>
         <Link
           href={`/product/${product.slug}`}
-          className="mt-0.5 text-sm font-medium leading-snug hover:text-accent-dark"
+          className="mt-0.5 block min-h-[2.5rem] text-sm font-medium leading-snug hover:text-accent-dark"
         >
           {product.name}
         </Link>

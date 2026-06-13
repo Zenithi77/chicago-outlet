@@ -1,12 +1,66 @@
 import Link from "next/link";
-import { PRODUCTS } from "@/lib/data/products";
-import { ProductCard } from "@/components/ProductCard";
+import type { Product } from "@/lib/types";
+import { ProductSlider } from "@/components/ProductSlider";
 import { ProductImage } from "@/components/ProductImage";
 import { HeroVideo } from "@/components/HeroVideo";
 import { ArrowRightIcon } from "@/components/Icons";
 import { createClient } from "@/lib/supabase/server";
 
 export const dynamic = "force-dynamic";
+
+async function fetchActiveProducts(): Promise<Product[]> {
+  try {
+    const supabase = await createClient();
+    const { data, error } = await supabase
+      .from("products")
+      .select("*")
+      .eq("is_active", true)
+      .order("created_at", { ascending: false });
+    if (error || !data) return [];
+    return data.map((row): Product => {
+      const expiresAt = row.discount_expires_at as string | null | undefined;
+      const expired = expiresAt ? new Date(expiresAt).getTime() < Date.now() : false;
+      const rawDiscount = row.discount_percent ?? 0;
+      return {
+        id: row.sku ?? row.id,
+        name: row.name,
+        slug: row.slug,
+        brand: row.brand ?? "Chicago Outlet",
+        category: row.category,
+        subcategory: row.subcategory ?? "",
+        gender: row.gender,
+        description: row.description ?? "",
+        shortDescription: row.short_description ?? "",
+        price: row.price,
+        currency: row.currency ?? "MNT",
+        discountPercent: expired ? 0 : rawDiscount,
+        images: row.images ?? [],
+        sizes: row.sizes ?? [],
+        sizeStocks: row.size_stocks ?? [],
+        colors: row.colors ?? [],
+        tags: row.tags ?? [],
+        isFeatured: row.is_featured ?? false,
+        isNewArrival: row.is_new_arrival ?? false,
+        isOnSale: expired ? false : Boolean(row.is_on_sale),
+        isActive: row.is_active ?? true,
+        careInstructions: row.care_instructions ?? "",
+        material: row.material ?? "",
+        fit: row.fit ?? "regular",
+        season: row.season ?? "all-season",
+        collection: row.collection ?? "",
+        rating: Number(row.rating ?? 0),
+        reviewCount: row.review_count ?? 0,
+        totalStock: row.total_stock ?? 0,
+        branch: row.branch ?? undefined,
+        branchStock: row.branch_stock ?? {},
+        isOnline: row.is_online ?? false,
+        createdAt: row.created_at,
+      };
+    });
+  } catch {
+    return [];
+  }
+}
 
 async function getHeroSettings(): Promise<Record<string, string>> {
   try {
@@ -67,10 +121,12 @@ function readPromo(settings: Record<string, string>, prefix: "promo1_" | "promo2
 }
 
 export default async function HomePage() {
-  const newArrivals = PRODUCTS.filter((p) => p.isNewArrival && p.isActive).slice(0, 8);
-  const featured = PRODUCTS.filter((p) => p.collection === "Urban Essentials").slice(0, 4);
-  const bestSellers = PRODUCTS.filter((p) => p.collection === "Best Sellers" || p.reviewCount > 150).slice(0, 4);
-  const onSale = PRODUCTS.filter((p) => p.isOnSale).slice(0, 4);
+  const products = await fetchActiveProducts();
+  const byCategory = (name: string) =>
+    products.filter((p) => p.category === name).slice(0, 12);
+  const huvtsas = byCategory("Хувцас");
+  const gutal = byCategory("Гутал");
+  const gerAhui = byCategory("Гэр ахуй");
 
   const heroSettings = await getHeroSettings();
   const promo1 = readPromo(heroSettings, "promo1_");
@@ -126,30 +182,24 @@ export default async function HomePage() {
         </div>
       </section>
 
-      {/* New Arrivals */}
-      <Section title="Шинэ бараа" subtitle="New Arrivals" href="/shop?gender=unisex">
-        <Grid products={newArrivals} />
+      {/* Хувцас */}
+      <Section title="Хувцас" subtitle="Clothing" href="/shop?category=%D0%A5%D1%83%D0%B2%D1%86%D0%B0%D1%81">
+        <ProductSlider products={huvtsas} />
       </Section>
 
       {/* Featured collection banner */}
       {promo1 && <PromoBanner banner={promo1} variant="image" />}
 
-      <Section title="Онцлох цуглуулга" subtitle="Urban Essentials">
-        <Grid products={featured} />
+      <Section title="Гутал" subtitle="Footwear" href="/shop?category=%D0%93%D1%83%D1%82%D0%B0%D0%BB">
+        <ProductSlider products={gutal} />
       </Section>
 
       {/* Sale banner */}
       {promo2 && <PromoBanner banner={promo2} variant="image" />}
 
-      <Section title="Шилдэг борлуулалт" subtitle="Best Sellers">
-        <Grid products={bestSellers} />
+      <Section title="Гэр ахуй" subtitle="Home" href="/shop?category=%D0%93%D1%8D%D1%80%20%D0%B0%D1%85%D1%83%D0%B9">
+        <ProductSlider products={gerAhui} />
       </Section>
-
-      {onSale.length > 0 && (
-        <Section title="Хямдралтай" subtitle="On Sale" href="/shop?gender=sale">
-          <Grid products={onSale} />
-        </Section>
-      )}
     </div>
   );
 }
@@ -182,16 +232,6 @@ function Section({
       </div>
       {children}
     </section>
-  );
-}
-
-function Grid({ products }: { products: typeof PRODUCTS }) {
-  return (
-    <div className="grid grid-cols-2 gap-x-4 gap-y-8 md:grid-cols-4">
-      {products.map((p) => (
-        <ProductCard key={p.id} product={p} />
-      ))}
-    </div>
   );
 }
 
