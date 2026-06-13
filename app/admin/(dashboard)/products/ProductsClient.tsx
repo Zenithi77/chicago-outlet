@@ -323,12 +323,33 @@ export function ProductsClient({
                 </button>
               </div>
             </div>
+            {r.sizeStocks.length > 0 && (
+              <div className="mt-3">
+                <p className="mb-1 text-[11px] font-medium text-muted">Хэмжээ / Нөөц</p>
+                <div className="flex flex-wrap gap-1">
+                  {r.sizeStocks.map((s) => (
+                    <span
+                      key={s.size}
+                      className={classNames(
+                        "rounded border px-1.5 py-0.5 text-[11px] font-semibold",
+                        s.stock <= 0
+                          ? "border-border bg-background text-muted line-through"
+                          : s.stock <= 5
+                          ? "border-accent/30 bg-accent/10 text-accent-dark"
+                          : "border-border bg-background text-foreground"
+                      )}
+                    >
+                      {s.size}: {s.stock}ш
+                    </span>
+                  ))}
+                </div>
+              </div>
+            )}
             <div className="mt-3 grid grid-cols-2 gap-3">
               <label className="block">
                 <span className="mb-1 block text-[11px] font-medium text-muted">
                   Үнэ (₮)
-                </span>
-                <input
+                </span>                <input
                   type="number"
                   defaultValue={r.price}
                   onBlur={(e) => {
@@ -382,6 +403,7 @@ export function ProductsClient({
             <tr>
               <th className="px-4 py-3">Бараа</th>
               <th className="px-4 py-3">SKU</th>
+              <th className="px-4 py-3">Хэмжээ / Нөөц</th>
               <th className="px-4 py-3">Салбар / Нөөц</th>
               <th className="px-4 py-3">Ангилал</th>
               <th className="px-4 py-3">Үнэ</th>
@@ -406,6 +428,30 @@ export function ProductsClient({
                 </td>
                 <td className="px-4 py-3 font-mono text-xs text-muted">
                   {r.sku}
+                </td>
+                <td className="px-4 py-3">
+                  {r.sizeStocks.length > 0 ? (
+                    <div className="flex max-w-[220px] flex-wrap gap-1">
+                      {r.sizeStocks.map((s) => (
+                        <span
+                          key={s.size}
+                          className={classNames(
+                            "rounded border px-1.5 py-0.5 text-[11px] font-semibold",
+                            s.stock <= 0
+                              ? "border-border bg-background text-muted line-through"
+                              : s.stock <= 5
+                              ? "border-accent/30 bg-accent/10 text-accent-dark"
+                              : "border-border bg-background text-foreground"
+                          )}
+                          title={`${s.size}: ${s.stock} ширхэг`}
+                        >
+                          {s.size}: {s.stock}ш
+                        </span>
+                      ))}
+                    </div>
+                  ) : (
+                    <span className="text-xs text-muted">—</span>
+                  )}
                 </td>
                 <td className="px-4 py-3">
                   <div className="flex flex-wrap gap-1">
