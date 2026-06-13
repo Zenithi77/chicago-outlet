@@ -85,45 +85,67 @@ export type ProductRow = {
 type Cat = { name: string; nameMn: string };
 
 const BRANCH_LABELS: Record<string, string> = {
-  park_od: "Park-Od",
-  riveria: "Riveria",
+  park_od: "Park Od",
+  riveria: "Parko Riveria",
 };
-const BRANCH_COLORS: Record<string, string> = {
-  park_od: "border-blue-200 bg-blue-50 text-blue-700",
-  riveria: "border-purple-200 bg-purple-50 text-purple-700",
+const BRANCH_DOT: Record<string, string> = {
+  park_od: "bg-blue-500",
+  riveria: "bg-purple-500",
 };
 
 function BranchSizeChips({ bss }: { bss: Record<string, Record<string, number>> }) {
-  const branches = Object.entries(bss).filter(([b]) => b === "park_od" || b === "riveria");
+  const branches = (["park_od", "riveria"] as const).filter((b) => bss[b] && Object.keys(bss[b]).length > 0);
   if (branches.length === 0) return null;
   return (
-    <div className="flex flex-col gap-1">
-      {branches.map(([branch, sizes]) => {
-        const entries = Object.entries(sizes);
-        if (entries.length === 0) return null;
+    <div className="flex flex-col gap-1 text-[12px] leading-tight">
+      {branches.map((branch) => {
+        const entries = Object.entries(bss[branch]);
         return (
-          <div key={branch} className="flex flex-wrap items-center gap-1">
-            <span className={classNames("rounded px-1.5 py-0.5 text-[10px] font-semibold border", BRANCH_COLORS[branch])}>
-              {BRANCH_LABELS[branch]}
+          <div key={branch} className="flex flex-wrap items-baseline gap-x-1">
+            <span className={classNames("inline-block h-1.5 w-1.5 rounded-full", BRANCH_DOT[branch])} />
+            <span className="font-semibold text-foreground">{BRANCH_LABELS[branch]} :</span>
+            <span className="text-muted">
+              {entries.map(([size, stock], i) => (
+                <span key={size} className={stock <= 0 ? "text-muted line-through" : stock <= 5 ? "text-accent-dark font-medium" : "text-foreground"}>
+                  {i > 0 ? ", " : " "}
+                  {size.toLowerCase()} - {stock}ш
+                </span>
+              ))}
             </span>
-            {entries.map(([size, stock]) => (
-              <span
-                key={size}
-                className={classNames(
-                  "rounded border px-1.5 py-0.5 text-[11px] font-semibold",
-                  stock <= 0
-                    ? "border-border bg-background text-muted line-through"
-                    : stock <= 5
-                    ? "border-accent/30 bg-accent/10 text-accent-dark"
-                    : "border-border bg-background text-foreground"
-                )}
-              >
-                {size}: {stock}ш
-              </span>
-            ))}
           </div>
         );
       })}
+    </div>
+  );
+}
+
+function StockCell({ r }: { r: ProductRow }) {
+  const hasBss = Object.keys(r.branchSizeStocks).length > 0;
+  if (hasBss) return <BranchSizeChips bss={r.branchSizeStocks} />;
+  const branches = (["park_od", "riveria"] as const).filter((b) => r.branchStock[b] !== undefined);
+  if (branches.length === 0 && r.sizeStocks.length === 0) {
+    return <span className="text-xs text-muted">—</span>;
+  }
+  const sizeStr = r.sizeStocks.length > 0
+    ? r.sizeStocks.map((s) => `${s.size.toLowerCase()} - ${s.stock}ш`).join(", ")
+    : "";
+  if (branches.length === 0) {
+    return <span className="text-[12px] text-muted">{sizeStr}</span>;
+  }
+  return (
+    <div className="flex flex-col gap-1 text-[12px] leading-tight">
+      {branches.map((branch) => (
+        <div key={branch} className="flex flex-wrap items-baseline gap-x-1">
+          <span className={classNames("inline-block h-1.5 w-1.5 rounded-full", BRANCH_DOT[branch])} />
+          <span className="font-semibold text-foreground">{BRANCH_LABELS[branch]} :</span>
+          <span className="text-muted">
+            {sizeStr || `${r.branchStock[branch]}ш`}
+          </span>
+        </div>
+      ))}
+      {!hasBss && sizeStr && (
+        <p className="mt-0.5 text-[10px] italic text-accent-dark">Салбар тус бүрийн нарийн нөөцийг засах формоор оруулна уу.</p>
+      )}
     </div>
   );
 }
@@ -338,17 +360,11 @@ export function ProductsClient({
                 <p className="truncate font-medium">{r.name}</p>
                 <p className="font-mono text-xs text-muted">{r.sku}</p>
                 <p className="text-xs text-muted">{r.category}</p>
-                <div className="mt-1 flex flex-wrap gap-1">
-                  {r.branchStock["park_od"] !== undefined && (
-                    <span className="rounded bg-blue-100 px-1.5 py-0.5 text-[10px] font-semibold text-blue-700">Park-Od: {r.branchStock["park_od"]}</span>
-                  )}
-                  {r.branchStock["riveria"] !== undefined && (
-                    <span className="rounded bg-purple-100 px-1.5 py-0.5 text-[10px] font-semibold text-purple-700">Riveria: {r.branchStock["riveria"]}</span>
-                  )}
-                  {r.isOnline && (
+                {r.isOnline && (
+                  <div className="mt-1">
                     <span className="rounded bg-amber-100 px-1.5 py-0.5 text-[10px] font-semibold text-amber-700">Захиалга</span>
-                  )}
-                </div>
+                  </div>
+                )}
               </div>
               <div className="flex shrink-0 flex-col items-end gap-1.5">
                 <button
@@ -368,33 +384,9 @@ export function ProductsClient({
                 </button>
               </div>
             </div>
-            {Object.keys(r.branchSizeStocks).length > 0 ? (
-              <div className="mt-3">
-                <p className="mb-1 text-[11px] font-medium text-muted">Салбар / Хэмжээ / Нөөц</p>
-                <BranchSizeChips bss={r.branchSizeStocks} />
-              </div>
-            ) : r.sizeStocks.length > 0 && (
-              <div className="mt-3">
-                <p className="mb-1 text-[11px] font-medium text-muted">Хэмжээ / Нөөц</p>
-                <div className="flex flex-wrap gap-1">
-                  {r.sizeStocks.map((s) => (
-                    <span
-                      key={s.size}
-                      className={classNames(
-                        "rounded border px-1.5 py-0.5 text-[11px] font-semibold",
-                        s.stock <= 0
-                          ? "border-border bg-background text-muted line-through"
-                          : s.stock <= 5
-                          ? "border-accent/30 bg-accent/10 text-accent-dark"
-                          : "border-border bg-background text-foreground"
-                      )}
-                    >
-                      {s.size}: {s.stock}ш
-                    </span>
-                  ))}
-                </div>
-              </div>
-            )}
+            <div className="mt-3">
+              <StockCell r={r} />
+            </div>
             <div className="mt-3 grid grid-cols-2 gap-3">
               <label className="block">
                 <span className="mb-1 block text-[11px] font-medium text-muted">
@@ -453,8 +445,7 @@ export function ProductsClient({
             <tr>
               <th className="px-4 py-3">Бараа</th>
               <th className="px-4 py-3">SKU</th>
-              <th className="px-4 py-3">Хэмжээ / Нөөц</th>
-              <th className="px-4 py-3">Салбар / Нөөц</th>
+              <th className="px-4 py-3">Салбар / Хэмжээ / Нөөц</th>
               <th className="px-4 py-3">Ангилал</th>
               <th className="px-4 py-3">Үнэ</th>
               <th className="px-4 py-3">Төлөв</th>
@@ -480,49 +471,10 @@ export function ProductsClient({
                   {r.sku}
                 </td>
                 <td className="px-4 py-3">
-                  {Object.keys(r.branchSizeStocks).length > 0 ? (
-                    <BranchSizeChips bss={r.branchSizeStocks} />
-                  ) : r.sizeStocks.length > 0 ? (
-                    <div className="flex max-w-[220px] flex-wrap gap-1">
-                      {r.sizeStocks.map((s) => (
-                        <span
-                          key={s.size}
-                          className={classNames(
-                            "rounded border px-1.5 py-0.5 text-[11px] font-semibold",
-                            s.stock <= 0
-                              ? "border-border bg-background text-muted line-through"
-                              : s.stock <= 5
-                              ? "border-accent/30 bg-accent/10 text-accent-dark"
-                              : "border-border bg-background text-foreground"
-                          )}
-                          title={`${s.size}: ${s.stock} ширхэг`}
-                        >
-                          {s.size}: {s.stock}ш
-                        </span>
-                      ))}
-                    </div>
-                  ) : (
-                    <span className="text-xs text-muted">—</span>
+                  <StockCell r={r} />
+                  {r.isOnline && (
+                    <span className="mt-1 inline-block rounded bg-amber-100 px-2 py-0.5 text-[11px] font-semibold text-amber-700">Захиалга</span>
                   )}
-                </td>
-                <td className="px-4 py-3">
-                  <div className="flex flex-wrap gap-1">
-                    {r.branchStock["park_od"] !== undefined && (
-                      <span className="rounded bg-blue-100 px-2 py-0.5 text-xs font-semibold text-blue-700">
-                        Park-Od: {r.branchStock["park_od"]}
-                      </span>
-                    )}
-                    {r.branchStock["riveria"] !== undefined && (
-                      <span className="rounded bg-purple-100 px-2 py-0.5 text-xs font-semibold text-purple-700">
-                        Riveria: {r.branchStock["riveria"]}
-                      </span>
-                    )}
-                    {r.isOnline && (
-                      <span className="rounded bg-amber-100 px-2 py-0.5 text-xs font-semibold text-amber-700">
-                        Захиалга
-                      </span>
-                    )}
-                  </div>
                 </td>
                 <td className="px-4 py-3">{r.category}</td>
                 <td className="px-4 py-3">
