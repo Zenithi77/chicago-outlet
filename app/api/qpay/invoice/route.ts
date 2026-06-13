@@ -94,9 +94,11 @@ export async function POST(request: Request) {
 
   // Insert order items (delete existing first to avoid duplicates on retry)
   await admin.from("order_items").delete().eq("order_id", orderId);
+  const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
   const itemRows = items.map((i) => ({
     order_id: orderId,
-    product_id: i.productId,
+    // product_id is a uuid column; the storefront may send a SKU (e.g. CO-2026-0442) instead.
+    product_id: UUID_RE.test(i.productId) ? i.productId : null,
     product_name: i.productName,
     sku: i.sku ?? null,
     size: i.size ?? null,

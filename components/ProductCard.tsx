@@ -42,6 +42,8 @@ export function ProductCard({ product }: { product: Product }) {
       slug: product.slug,
       name: product.name,
       sku: product.id,
+      branch: product.branch,
+      isOnline: product.isOnline,
       size,
       color: color.name,
       colorHex: color.hex,

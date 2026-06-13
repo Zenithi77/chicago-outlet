@@ -70,6 +70,8 @@ export function ProductDetail({ product, isLoggedIn = false }: { product: Produc
       slug: product.slug,
       name: product.name,
       sku: product.id,
+      branch: product.branch,
+      isOnline: product.isOnline,
       size: size ?? "",
       color: color.name,
       colorHex: color.hex,

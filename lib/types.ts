@@ -128,6 +128,8 @@ export interface CartItem {
   slug: string;
   name: string;
   sku: string;
+  branch?: Branch;
+  isOnline?: boolean;
   size: string;
   color: string;
   colorHex: string;

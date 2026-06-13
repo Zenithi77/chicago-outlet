@@ -39,6 +39,7 @@ function mapRow(data: Record<string, unknown>): Product {
     rating: Number(data.rating ?? 0),
     reviewCount: Number(data.review_count ?? 0),
     totalStock: Number(data.total_stock ?? 0),
+    branch: (data.branch as Product["branch"]) ?? undefined,
     branchStock: (data.branch_stock as Record<string, number>) ?? {},
     isOnline: Boolean(data.is_online),
     createdAt: data.created_at as string,
