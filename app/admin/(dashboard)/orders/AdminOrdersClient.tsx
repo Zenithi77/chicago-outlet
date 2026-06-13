@@ -61,13 +61,18 @@ export function AdminOrdersClient({ initialOrders }: { initialOrders: Order[] })
   const [selected, setSelected] = useState<Order | null>(null);
   const [pending, startTransition] = useTransition();
   const [actionError, setActionError] = useState<string | null>(null);
+  const [shipPrompt, setShipPrompt] = useState<{ orderId: string } | null>(null);
 
   const filtered = filter === "all" ? orders : orders.filter((o) => o.status === filter);
 
-  const changeStatus = (orderId: string, toStatus: string) => {
+  const changeStatus = (orderId: string, toStatus: string, shipBranch?: "park_od" | "riveria") => {
     setActionError(null);
+    if (toStatus === "shipped" && !shipBranch) {
+      setShipPrompt({ orderId });
+      return;
+    }
     startTransition(async () => {
-      const res = await updateOrderStatus(orderId, toStatus);
+      const res = await updateOrderStatus(orderId, toStatus, shipBranch);
       if (res.error) {
         setActionError(res.error);
         return;
@@ -76,6 +81,7 @@ export function AdminOrdersClient({ initialOrders }: { initialOrders: Order[] })
         prev.map((o) => (o.id === orderId ? { ...o, status: toStatus } : o))
       );
       setSelected((s) => (s?.id === orderId ? { ...s, status: toStatus } : s));
+      setShipPrompt(null);
     });
   };
 
@@ -330,6 +336,43 @@ export function AdminOrdersClient({ initialOrders }: { initialOrders: Order[] })
             )}
           </aside>
         </>
+      )}
+
+      {shipPrompt && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+          <div
+            className="absolute inset-0 bg-foreground/50 backdrop-blur-sm"
+            onClick={() => setShipPrompt(null)}
+          />
+          <div className="relative w-full max-w-sm rounded-2xl bg-surface p-6 shadow-2xl">
+            <h3 className="font-serif text-lg font-bold">Аль салбараас хүргэх вэ?</h3>
+            <p className="mt-1 text-sm text-muted">
+              Сонгосон салбарын тухайн хэмжээний нөөцөөс хасагдана.
+            </p>
+            <div className="mt-5 flex flex-col gap-2">
+              <button
+                disabled={pending}
+                onClick={() => changeStatus(shipPrompt.orderId, "shipped", "park_od")}
+                className="rounded-md border border-blue-400 bg-blue-50 px-4 py-3 text-sm font-semibold text-blue-700 hover:bg-blue-100 disabled:opacity-50"
+              >
+                Park-Od Mall
+              </button>
+              <button
+                disabled={pending}
+                onClick={() => changeStatus(shipPrompt.orderId, "shipped", "riveria")}
+                className="rounded-md border border-purple-400 bg-purple-50 px-4 py-3 text-sm font-semibold text-purple-700 hover:bg-purple-100 disabled:opacity-50"
+              >
+                Parko Riveria
+              </button>
+              <button
+                onClick={() => setShipPrompt(null)}
+                className="mt-1 rounded-md px-4 py-2 text-sm text-muted hover:bg-background"
+              >
+                Болих
+              </button>
+            </div>
+          </div>
+        </div>
       )}
     </div>
   );

@@ -60,6 +60,7 @@ export type ProductRow = {
   subcategory: string;
   gender: string;
   branchStock: Record<string, number>;
+  branchSizeStocks: Record<string, Record<string, number>>;
   isOnline: boolean;
   price: number;
   discountPercent: number;
@@ -82,6 +83,50 @@ export type ProductRow = {
 };
 
 type Cat = { name: string; nameMn: string };
+
+const BRANCH_LABELS: Record<string, string> = {
+  park_od: "Park-Od",
+  riveria: "Riveria",
+};
+const BRANCH_COLORS: Record<string, string> = {
+  park_od: "border-blue-200 bg-blue-50 text-blue-700",
+  riveria: "border-purple-200 bg-purple-50 text-purple-700",
+};
+
+function BranchSizeChips({ bss }: { bss: Record<string, Record<string, number>> }) {
+  const branches = Object.entries(bss).filter(([b]) => b === "park_od" || b === "riveria");
+  if (branches.length === 0) return null;
+  return (
+    <div className="flex flex-col gap-1">
+      {branches.map(([branch, sizes]) => {
+        const entries = Object.entries(sizes);
+        if (entries.length === 0) return null;
+        return (
+          <div key={branch} className="flex flex-wrap items-center gap-1">
+            <span className={classNames("rounded px-1.5 py-0.5 text-[10px] font-semibold border", BRANCH_COLORS[branch])}>
+              {BRANCH_LABELS[branch]}
+            </span>
+            {entries.map(([size, stock]) => (
+              <span
+                key={size}
+                className={classNames(
+                  "rounded border px-1.5 py-0.5 text-[11px] font-semibold",
+                  stock <= 0
+                    ? "border-border bg-background text-muted line-through"
+                    : stock <= 5
+                    ? "border-accent/30 bg-accent/10 text-accent-dark"
+                    : "border-border bg-background text-foreground"
+                )}
+              >
+                {size}: {stock}ш
+              </span>
+            ))}
+          </div>
+        );
+      })}
+    </div>
+  );
+}
 
 export function ProductsClient({
   initial,
@@ -323,7 +368,12 @@ export function ProductsClient({
                 </button>
               </div>
             </div>
-            {r.sizeStocks.length > 0 && (
+            {Object.keys(r.branchSizeStocks).length > 0 ? (
+              <div className="mt-3">
+                <p className="mb-1 text-[11px] font-medium text-muted">Салбар / Хэмжээ / Нөөц</p>
+                <BranchSizeChips bss={r.branchSizeStocks} />
+              </div>
+            ) : r.sizeStocks.length > 0 && (
               <div className="mt-3">
                 <p className="mb-1 text-[11px] font-medium text-muted">Хэмжээ / Нөөц</p>
                 <div className="flex flex-wrap gap-1">
@@ -430,7 +480,9 @@ export function ProductsClient({
                   {r.sku}
                 </td>
                 <td className="px-4 py-3">
-                  {r.sizeStocks.length > 0 ? (
+                  {Object.keys(r.branchSizeStocks).length > 0 ? (
+                    <BranchSizeChips bss={r.branchSizeStocks} />
+                  ) : r.sizeStocks.length > 0 ? (
                     <div className="flex max-w-[220px] flex-wrap gap-1">
                       {r.sizeStocks.map((s) => (
                         <span
@@ -577,6 +629,12 @@ function ProductForm({
     sizes: editProduct?.sizeStocks?.length
       ? editProduct.sizeStocks.map(ss => `${ss.size}|${ss.stock}`).join("\n")
       : editProduct?.sizes?.map(s => `${s}|0`).join("\n") ?? "",
+    sizes_park_od: editProduct?.branchSizeStocks?.["park_od"]
+      ? Object.entries(editProduct.branchSizeStocks["park_od"]).map(([s, n]) => `${s}|${n}`).join("\n")
+      : "",
+    sizes_riveria: editProduct?.branchSizeStocks?.["riveria"]
+      ? Object.entries(editProduct.branchSizeStocks["riveria"]).map(([s, n]) => `${s}|${n}`).join("\n")
+      : "",
     images: editProduct?.images?.join(", ") ?? "",
     tags: editProduct?.tags?.join(", ") ?? "",
     material: editProduct?.material ?? "",
@@ -1143,19 +1201,44 @@ function ProductForm({
         />
       </label>
 
-      {/* 6. Хэмжээ & нөөц (тус бүрт) */}
+      {/* 6. Хэмжээ & нөөц — салбар тус бүрээр */}
       {isApparel && (
         <div className="block sm:col-span-2 lg:col-span-3">
-          <span className={lbl}>Хэмжээ & нөөц — нэг мөрт нэг хэмжээ: <code className="text-accent-dark">Хэмжээ|Тоо</code></span>
-          <textarea
-            name="sizes"
-            rows={5}
-            placeholder={"XS|10\nS|15\nM|20\nL|12\nXL|8"}
-            value={v.sizes}
-            onChange={(e) => set("sizes", e.target.value)}
-            className={field + " font-mono text-xs"}
-          />
-          <p className="mt-1 text-xs text-muted">Жишээ: <code>M|20</code> → M хэмжээний нөөц 20 ширхэг. Нөөц 0 бол тухайн хэмжээ дууссан гэж харагдана.</p>
+          <span className={lbl}>Хэмжээ &amp; нөөц — салбар тус бүрээр (<code className="text-accent-dark">Хэмжээ|Тоо</code>)</span>
+          <div className="mt-1 grid gap-3 sm:grid-cols-2">
+            {v.has_park_od && (
+              <label className="block">
+                <span className="mb-1 block text-xs font-semibold text-blue-700">Park-Od Mall</span>
+                <textarea
+                  name="sizes_park_od"
+                  rows={5}
+                  placeholder={"M|2\nL|2"}
+                  value={v.sizes_park_od}
+                  onChange={(e) => set("sizes_park_od", e.target.value)}
+                  className={field + " font-mono text-xs"}
+                />
+              </label>
+            )}
+            {v.has_riveria && (
+              <label className="block">
+                <span className="mb-1 block text-xs font-semibold text-purple-700">Parko Riveria</span>
+                <textarea
+                  name="sizes_riveria"
+                  rows={5}
+                  placeholder={"M|1\nL|3"}
+                  value={v.sizes_riveria}
+                  onChange={(e) => set("sizes_riveria", e.target.value)}
+                  className={field + " font-mono text-xs"}
+                />
+              </label>
+            )}
+          </div>
+          {!v.has_park_od && !v.has_riveria && (
+            <p className="mt-2 text-xs text-muted">Эхлээд дээрх &ldquo;Салбар &amp; нөөц&rdquo; хэсэгт салбараа сонгоно уу.</p>
+          )}
+          <p className="mt-2 text-xs text-muted">Жишээ: <code>M|2</code> → Park-Od салбарт M хэмжээ 2ш. Нийт болон салбарын нийт нөөцийг автоматаар тооцно.</p>
+          {/* Hidden combined textarea kept for backward-compat; not user-visible. */}
+          <input type="hidden" name="sizes" value={v.sizes} />
         </div>
       )}
 

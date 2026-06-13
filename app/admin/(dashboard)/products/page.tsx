@@ -9,7 +9,7 @@ export default async function AdminProductsPage() {
   const { data, error } = await supabase
     .from("products")
     .select(
-      "id, sku, name, slug, brand, category, subcategory, gender, price, discount_percent, total_stock, is_active, is_featured, is_new_arrival, images, collection, branch_stock, is_online, material, fit, season, tags, sizes, size_stocks, colors, short_description, description, care_instructions"
+      "id, sku, name, slug, brand, category, subcategory, gender, price, discount_percent, total_stock, is_active, is_featured, is_new_arrival, images, collection, branch_stock, branch_size_stocks, is_online, material, fit, season, tags, sizes, size_stocks, colors, short_description, description, care_instructions"
     )
     .order("created_at", { ascending: false });
 
@@ -23,6 +23,7 @@ export default async function AdminProductsPage() {
     subcategory: (p.subcategory as string) ?? "",
     gender: (p.gender as string) ?? "unisex",
     branchStock: (p.branch_stock as Record<string, number>) ?? {},
+    branchSizeStocks: (p.branch_size_stocks as Record<string, Record<string, number>>) ?? {},
     isOnline: Boolean(p.is_online),
     price: Number(p.price ?? 0),
     discountPercent: Number(p.discount_percent ?? 0),

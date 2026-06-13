@@ -93,6 +93,47 @@ function parseBranchStock(formData: FormData): {
   return { branch_stock, is_online, total_stock };
 }
 
+// Parse per-branch "Size|Stock" textareas into branch_size_stocks jsonb shape:
+//   { park_od: { M: 2, L: 2 }, riveria: { M: 1, L: 3 } }
+// Returns derived size_stocks (summed across branches), sizes list, and total.
+function parseBranchSizeStocks(formData: FormData): {
+  branch_size_stocks: Record<string, Record<string, number>>;
+  size_stocks: { size: string; stock: number }[];
+  sizes: string[];
+  total: number;
+} {
+  const branches: Array<"park_od" | "riveria"> = [];
+  if (formData.get("has_park_od") === "on") branches.push("park_od");
+  if (formData.get("has_riveria") === "on") branches.push("riveria");
+
+  const bss: Record<string, Record<string, number>> = {};
+  const sizeTotals: Record<string, number> = {};
+
+  for (const branch of branches) {
+    const raw = String(formData.get(`sizes_${branch}`) ?? "");
+    if (!raw.trim()) continue;
+    const map: Record<string, number> = {};
+    raw
+      .split("\n")
+      .map((l) => l.trim())
+      .filter(Boolean)
+      .forEach((line) => {
+        const [size, stockStr] = line.split("|").map((s) => s.trim());
+        if (!size) return;
+        const stock = Math.max(0, Number(stockStr) || 0);
+        map[size] = stock;
+        sizeTotals[size] = (sizeTotals[size] ?? 0) + stock;
+      });
+    if (Object.keys(map).length > 0) bss[branch] = map;
+  }
+
+  const size_stocks = Object.entries(sizeTotals).map(([size, stock]) => ({ size, stock }));
+  const sizes = size_stocks.map((s) => s.size);
+  const total = size_stocks.reduce((acc, s) => acc + s.stock, 0);
+  return { branch_size_stocks: bss, size_stocks, sizes, total };
+}
+
+
 export async function createProduct(
   _prev: ProductActionState,
   formData: FormData
@@ -113,9 +154,27 @@ export async function createProduct(
 
   const colors = parseColors(formData.get("colors"));
   const { branch_stock, is_online, total_stock: branchTotal } = parseBranchStock(formData);
-  const { size_stocks, sizes, size_total_stock } = parseSizeStocks(formData.get("sizes"));
-  // If size stocks provided, use their sum; otherwise fall back to branch total
-  const total_stock = size_stocks.length > 0 ? size_total_stock : branchTotal;
+  const bss = parseBranchSizeStocks(formData);
+  const legacy = parseSizeStocks(formData.get("sizes"));
+
+  // BSS (per-branch+per-size) is the source of truth when provided.
+  const hasBss = Object.keys(bss.branch_size_stocks).length > 0;
+  const branch_size_stocks = bss.branch_size_stocks;
+  const size_stocks = hasBss ? bss.size_stocks : legacy.size_stocks;
+  const sizes = hasBss ? bss.sizes : legacy.sizes;
+
+  // Recompute branch_stock totals from BSS when present (overrides stock_* inputs).
+  if (hasBss) {
+    for (const [b, sizesMap] of Object.entries(bss.branch_size_stocks)) {
+      branch_stock[b] = Object.values(sizesMap).reduce((a, n) => a + n, 0);
+    }
+  }
+
+  const total_stock = hasBss
+    ? Object.values(branch_stock).reduce((a, n) => a + n, 0)
+    : size_stocks.length > 0
+    ? legacy.size_total_stock
+    : branchTotal;
 
   let slug = String(formData.get("slug") ?? "").trim() || slugify(name);
 
@@ -172,6 +231,7 @@ export async function createProduct(
     season: String(formData.get("season") ?? "all-season").trim() || "all-season",
     collection: String(formData.get("collection") ?? "").trim(),
     branch_stock,
+    branch_size_stocks,
     is_online,
     total_stock,
   };
@@ -207,8 +267,25 @@ export async function updateProduct(
   const supabase = await createClient();
   const colors = parseColors(formData.get("colors"));
   const { branch_stock, is_online, total_stock: branchTotal } = parseBranchStock(formData);
-  const { size_stocks: patchSizeStocks, sizes: patchSizes, size_total_stock } = parseSizeStocks(formData.get("sizes"));
-  const total_stock = patchSizeStocks.length > 0 ? size_total_stock : branchTotal;
+  const bss = parseBranchSizeStocks(formData);
+  const legacy = parseSizeStocks(formData.get("sizes"));
+
+  const hasBss = Object.keys(bss.branch_size_stocks).length > 0;
+  const branch_size_stocks = bss.branch_size_stocks;
+  const patchSizeStocks = hasBss ? bss.size_stocks : legacy.size_stocks;
+  const patchSizes = hasBss ? bss.sizes : legacy.sizes;
+
+  if (hasBss) {
+    for (const [b, sizesMap] of Object.entries(bss.branch_size_stocks)) {
+      branch_stock[b] = Object.values(sizesMap).reduce((a, n) => a + n, 0);
+    }
+  }
+
+  const total_stock = hasBss
+    ? Object.values(branch_stock).reduce((a, n) => a + n, 0)
+    : patchSizeStocks.length > 0
+    ? legacy.size_total_stock
+    : branchTotal;
 
   const patch = {
     name,
@@ -235,6 +312,7 @@ export async function updateProduct(
     season: String(formData.get("season") ?? "all-season").trim() || "all-season",
     collection: String(formData.get("collection") ?? "").trim(),
     branch_stock,
+    branch_size_stocks,
     is_online,
     total_stock,
   };
