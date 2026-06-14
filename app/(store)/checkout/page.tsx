@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useEffect, useState } from "react";
 import { useCart } from "@/lib/store/cart";
+import { createClient } from "@/lib/supabase/client";
 import { formatMNT, classNames, isValidMnPhone, isValidEmail, generateOrderId } from "@/lib/utils";
 import { BRAND } from "@/lib/brand";
 import { CheckIcon, ArrowLeftIcon, CloseIcon } from "@/components/Icons";
@@ -56,6 +57,22 @@ export default function CheckoutPage() {
   const [step, setStep] = useState(0);
   const [orderId, setOrderId] = useState("");
   const [payment] = useState<PaymentMethod>("qpay");
+
+  // Auth gate: only logged-in users can checkout.
+  const [authChecked, setAuthChecked] = useState(false);
+  const [authed, setAuthed] = useState(false);
+  useEffect(() => {
+    const supabase = createClient();
+    supabase.auth.getUser().then(({ data }) => {
+      if (data.user) {
+        setAuthed(true);
+        setForm((f) => (f.email ? f : { ...f, email: data.user!.email ?? "" }));
+      } else {
+        setAuthed(false);
+      }
+      setAuthChecked(true);
+    });
+  }, []);
 
   const [form, setForm] = useState({
     name: "",
@@ -190,6 +207,35 @@ export default function CheckoutPage() {
       clearInterval(id);
     };
   }, [qpayInvoice, clear]);
+
+  if (!authChecked) {
+    return (
+      <div className="container-page flex items-center justify-center py-28 text-sm text-muted">
+        Уншиж байна...
+      </div>
+    );
+  }
+
+  if (!authed) {
+    const next = encodeURIComponent("/checkout");
+    return (
+      <div className="container-page flex flex-col items-center gap-4 py-28 text-center">
+        <h1 className="font-serif text-2xl font-bold">Нэвтрэх шаардлагатай</h1>
+        <p className="max-w-md text-sm text-muted">
+          Захиалга хийхийн тулд эхлээд бүртгэлдээ нэвтэрнэ үү. Нэвтрэхээр захиалгын түүх,
+          хүргэлтийн мэдээлэл хадгалагдах болно.
+        </p>
+        <div className="mt-2 flex gap-2">
+          <Link href={`/account?next=${next}`} className="rounded-md bg-foreground px-6 py-3 text-sm font-semibold text-white">
+            Нэвтрэх / Бүртгүүлэх
+          </Link>
+          <Link href="/cart" className="rounded-md border px-6 py-3 text-sm font-semibold">
+            Сагс руу буцах
+          </Link>
+        </div>
+      </div>
+    );
+  }
 
   if (items.length === 0 && step < 3) {
     return (
