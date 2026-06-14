@@ -14,6 +14,7 @@ const TABS = ["Тайлбар", "Хэмжээний заавар", "Матери
 
 export function ProductDetail({ product, isLoggedIn = false }: { product: Product; isLoggedIn?: boolean }) {
   const addItem = useCart((s) => s.addItem);
+  const cartOpen = useCart((s) => s.isOpen);
   const [colorIdx, setColorIdx] = useState(0);
   const [size, setSize] = useState<string | null>(
     product.sizes.length === 1 ? product.sizes[0] : null
@@ -399,8 +400,8 @@ export function ProductDetail({ product, isLoggedIn = false }: { product: Produc
       <div className="h-20 lg:hidden" />
 
       {/* Sticky mobile footer — rendered in body via portal to avoid transform/overflow issues */}
-      {mounted && createPortal(
-        <div className="fixed bottom-0 left-0 right-0 z-[999] border-t bg-white/95 backdrop-blur-sm px-4 py-3 lg:hidden">
+      {mounted && !cartOpen && createPortal(
+        <div className="fixed bottom-0 left-0 right-0 z-40 border-t bg-white/95 backdrop-blur-sm px-4 py-3 lg:hidden">
           {error === "auth" ? (
             <div className="rounded-lg border border-accent/40 bg-accent/5 px-4 py-3 text-sm">
               <p className="font-medium">Захиалга өгөхийн тулд нэвтрэнэ үү.</p>

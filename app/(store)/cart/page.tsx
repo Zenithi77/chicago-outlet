@@ -15,12 +15,7 @@ export default function CartPage() {
   const [code, setCode] = useState("");
   const [msg, setMsg] = useState<{ ok: boolean; text: string } | null>(null);
 
-  const shippingFee =
-    shippingMethod === "express"
-      ? BRAND.expressFee
-      : subtotal >= BRAND.freeShippingThreshold || shippingMethod === "pickup"
-      ? 0
-      : 0;
+  const shippingFee = BRAND.deliveryFee;
 
   const total = Math.max(0, subtotal - discount) + shippingFee;
 
@@ -122,27 +117,8 @@ export default function CartPage() {
           </div>
 
           {/* Shipping */}
-          <div className="mt-5">
-            <p className="mb-2 text-sm font-medium">Хүргэлтийн төрөл</p>
-            {[
-              { v: "standard", label: "Стандарт (1–3 хоног)", fee: subtotal >= BRAND.freeShippingThreshold ? "Үнэгүй" : "Үнэгүй" },
-              { v: "express", label: "Шуурхай (1 хоног)", fee: formatMNT(BRAND.expressFee) },
-              { v: "pickup", label: "Дэлгүүрээс авах", fee: "Үнэгүй" },
-            ].map((opt) => (
-              <label key={opt.v} className="flex cursor-pointer items-center justify-between py-1 text-sm">
-                <span className="flex items-center gap-2">
-                  <input
-                    type="radio"
-                    name="ship"
-                    checked={shippingMethod === opt.v}
-                    onChange={() => setShipping(opt.v as "standard" | "express" | "pickup")}
-                    className="accent-[var(--accent)]"
-                  />
-                  {opt.label}
-                </span>
-                <span className="text-muted">{opt.fee}</span>
-              </label>
-            ))}
+          <div className="mt-5 rounded-lg border bg-background px-3 py-2 text-sm text-muted">
+            Хүргэлтийн төлбөр: <span className="font-semibold text-foreground">{formatMNT(BRAND.deliveryFee)}</span> (Улаанбаатар хот дотор)
           </div>
 
           <div className="mt-5 space-y-2 border-t pt-4 text-sm">
