@@ -124,7 +124,7 @@ export default function CartPage() {
           <div className="mt-5 space-y-2 border-t pt-4 text-sm">
             <Row label="Дэд дүн" value={formatMNT(subtotal)} />
             {discount > 0 && <Row label="Хямдрал" value={`-${formatMNT(discount)}`} accent />}
-            <Row label="Хүргэлт" value={shippingFee === 0 ? "Үнэгүй" : formatMNT(shippingFee)} />
+            <Row label="Хүргэлт" value={formatMNT(shippingFee)} />
             <div className="flex justify-between border-t pt-3 text-base font-bold">
               <span>Нийт</span>
               <span>{formatMNT(total)}</span>
