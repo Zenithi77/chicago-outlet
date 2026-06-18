@@ -16,7 +16,7 @@ export default async function AdminOrdersPage() {
       `id, created_at, status, payment_status, total, subtotal, shipping_fee, discount_amount, coupon_code,
        customer_name, customer_email, customer_phone, customer_address,
        payment_method, shipping_method, tracking_number, notes,
-       order_items(product_name, sku, size, color, qty, unit_price, subtotal, image)`
+       order_items(id, product_id, product_name, sku, size, color, qty, unit_price, subtotal, image, products(category))`
     )
     .order("created_at", { ascending: false })
     .limit(200);
@@ -42,6 +42,9 @@ export default async function AdminOrdersPage() {
       address: o.customer_address ?? "",
     },
     items: (o.order_items ?? []).map((i: any) => ({
+      id: i.id ?? "",
+      productId: i.product_id ?? "",
+      category: i.products?.category ?? "",
       productName: i.product_name ?? "",
       sku: i.sku ?? "",
       size: i.size ?? "",

@@ -7,6 +7,9 @@ import { ProductImage } from "@/components/ProductImage";
 import { updateOrderStatus } from "./actions";
 
 type OrderItem = {
+  id: string;
+  productId: string;
+  category: string;
   productName: string;
   sku: string;
   size: string;
@@ -61,18 +64,27 @@ export function AdminOrdersClient({ initialOrders }: { initialOrders: Order[] })
   const [selected, setSelected] = useState<Order | null>(null);
   const [pending, startTransition] = useTransition();
   const [actionError, setActionError] = useState<string | null>(null);
-  const [shipPrompt, setShipPrompt] = useState<{ orderId: string } | null>(null);
+  const [shipPrompt, setShipPrompt] = useState<{ order: Order } | null>(null);
+  const [shipPicks, setShipPicks] = useState<Record<string, "park_od" | "riveria">>({});
 
   const filtered = filter === "all" ? orders : orders.filter((o) => o.status === filter);
 
-  const changeStatus = (orderId: string, toStatus: string, shipBranch?: "park_od" | "riveria") => {
+  const changeStatus = (
+    orderId: string,
+    toStatus: string,
+    picks?: Record<string, "park_od" | "riveria">
+  ) => {
     setActionError(null);
-    if (toStatus === "shipped" && !shipBranch) {
-      setShipPrompt({ orderId });
+    if (toStatus === "shipped" && !picks) {
+      const ord = orders.find((o) => o.id === orderId);
+      if (ord) {
+        setShipPicks({});
+        setShipPrompt({ order: ord });
+      }
       return;
     }
     startTransition(async () => {
-      const res = await updateOrderStatus(orderId, toStatus, shipBranch);
+      const res = await updateOrderStatus(orderId, toStatus, picks);
       if (res.error) {
         setActionError(res.error);
         return;
@@ -82,6 +94,7 @@ export function AdminOrdersClient({ initialOrders }: { initialOrders: Order[] })
       );
       setSelected((s) => (s?.id === orderId ? { ...s, status: toStatus } : s));
       setShipPrompt(null);
+      setShipPicks({});
     });
   };
 
@@ -344,31 +357,88 @@ export function AdminOrdersClient({ initialOrders }: { initialOrders: Order[] })
             className="absolute inset-0 bg-foreground/50 backdrop-blur-sm"
             onClick={() => setShipPrompt(null)}
           />
-          <div className="relative w-full max-w-sm rounded-2xl bg-surface p-6 shadow-2xl">
-            <h3 className="font-serif text-lg font-bold">Аль салбараас хүргэх вэ?</h3>
+          <div className="relative w-full max-w-lg max-h-[90vh] overflow-y-auto rounded-2xl bg-surface p-6 shadow-2xl">
+            <h3 className="font-serif text-lg font-bold">Бараа бүрд салбараа сонгоно уу</h3>
             <p className="mt-1 text-sm text-muted">
-              Сонгосон салбарын тухайн хэмжээний нөөцөөс хасагдана.
+              Сонгосон салбарын нөөцөөс хасагдана.
             </p>
-            <div className="mt-5 flex flex-col gap-2">
-              <button
-                disabled={pending}
-                onClick={() => changeStatus(shipPrompt.orderId, "shipped", "park_od")}
-                className="rounded-md border border-blue-400 bg-blue-50 px-4 py-3 text-sm font-semibold text-blue-700 hover:bg-blue-100 disabled:opacity-50"
-              >
-                Park-Od Mall
-              </button>
-              <button
-                disabled={pending}
-                onClick={() => changeStatus(shipPrompt.orderId, "shipped", "riveria")}
-                className="rounded-md border border-purple-400 bg-purple-50 px-4 py-3 text-sm font-semibold text-purple-700 hover:bg-purple-100 disabled:opacity-50"
-              >
-                Parko Riveria
-              </button>
+            <div className="mt-4 space-y-3">
+              {shipPrompt.order.items.map((it) => {
+                const pick = shipPicks[it.id];
+                return (
+                  <div key={it.id} className="flex gap-3 rounded-lg border bg-background p-3">
+                    {it.image ? (
+                      <div className="h-16 w-14 shrink-0 overflow-hidden rounded-md border">
+                        <ProductImage seed={it.image} label={it.productName} className="h-full w-full object-cover" />
+                      </div>
+                    ) : (
+                      <div className="h-16 w-14 shrink-0 rounded-md border bg-border/30 flex items-center justify-center text-lg">📦</div>
+                    )}
+                    <div className="flex-1 min-w-0">
+                      <p className="text-sm font-medium leading-snug">{it.productName}</p>
+                      <p className="text-[11px] font-mono text-muted">{it.sku}</p>
+                      <div className="mt-1 flex flex-wrap gap-1">
+                        {it.size && (
+                          <span className="rounded bg-foreground/10 px-2 py-0.5 text-[11px] font-semibold">
+                            {it.size}
+                          </span>
+                        )}
+                        <span className="rounded bg-accent/20 px-2 py-0.5 text-[11px] font-semibold text-accent-dark">
+                          × {it.qty}ш
+                        </span>
+                        {it.category && (
+                          <span className="rounded bg-foreground/5 px-2 py-0.5 text-[11px] text-muted">
+                            {it.category}
+                          </span>
+                        )}
+                      </div>
+                      <div className="mt-2 flex gap-2">
+                        <button
+                          type="button"
+                          onClick={() => setShipPicks((p) => ({ ...p, [it.id]: "park_od" }))}
+                          className={classNames(
+                            "flex-1 rounded-md border px-2 py-1.5 text-xs font-semibold transition",
+                            pick === "park_od"
+                              ? "border-blue-500 bg-blue-50 text-blue-700"
+                              : "border-border hover:border-blue-400"
+                          )}
+                        >
+                          Park-Od
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => setShipPicks((p) => ({ ...p, [it.id]: "riveria" }))}
+                          className={classNames(
+                            "flex-1 rounded-md border px-2 py-1.5 text-xs font-semibold transition",
+                            pick === "riveria"
+                              ? "border-purple-500 bg-purple-50 text-purple-700"
+                              : "border-border hover:border-purple-400"
+                          )}
+                        >
+                          Riveria
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+            <div className="mt-5 flex gap-2">
               <button
                 onClick={() => setShipPrompt(null)}
-                className="mt-1 rounded-md px-4 py-2 text-sm text-muted hover:bg-background"
+                className="flex-1 rounded-md border px-4 py-2 text-sm hover:bg-background"
               >
                 Болих
+              </button>
+              <button
+                disabled={
+                  pending ||
+                  shipPrompt.order.items.some((it) => !shipPicks[it.id])
+                }
+                onClick={() => changeStatus(shipPrompt.order.id, "shipped", shipPicks)}
+                className="flex-[2] rounded-md bg-foreground px-4 py-2 text-sm font-semibold text-white hover:opacity-80 disabled:opacity-50"
+              >
+                {pending ? "Хадгалж байна…" : "Хүргэлтэнд гаргах"}
               </button>
             </div>
           </div>
