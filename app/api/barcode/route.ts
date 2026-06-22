@@ -110,14 +110,18 @@ function normalise(code: string, item: RawItem, source: string): Normalised {
   );
 
   // Build description: base + features list.
-  let description = item.description ?? "";
-  if (item.features?.length) {
-    const feat = item.features.map((f) => `• ${f}`).join("\n");
+  let description = typeof item.description === "string" ? item.description : "";
+  if (Array.isArray(item.features) && item.features.length) {
+    const feat = item.features.map((f) => `• ${String(f)}`).join("\n");
     description = description ? `${description}\n\n${feat}` : feat;
   }
 
   // age_group can override gender (e.g. "newborn" → kids).
   const gender = normaliseGender(item.gender) || normaliseGender(item.age_group);
+
+  // Guard against APIs returning non-string size/color values.
+  const sizeStr = typeof item.size === "string" ? item.size : String(item.size ?? "");
+  const colorStr = typeof item.color === "string" ? item.color : String(item.color ?? "");
 
   return {
     found: true,
@@ -126,11 +130,11 @@ function normalise(code: string, item: RawItem, source: string): Normalised {
     brand: item.brand ?? "",
     subcategory: item.category?.split(">").pop()?.trim() ?? "",
     description,
-    short_description: (item.description ?? "").slice(0, 140),
+    short_description: description.slice(0, 140),
     material: item.material ?? "",
     gender,
-    sizes: parseSizes(item.size ?? ""),
-    colors: splitColors(item.color ?? ""),
+    sizes: parseSizes(sizeStr),
+    colors: splitColors(colorStr),
     images: images.slice(0, 8),
     source,
   };

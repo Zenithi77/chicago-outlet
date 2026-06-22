@@ -150,7 +150,12 @@ export async function createProduct(
     return { ok: false, error: "Нэр болон зөв үнэ оруулна уу." };
   }
 
-  const supabase = await createClient();
+  let supabase: Awaited<ReturnType<typeof createClient>>;
+  try {
+    supabase = await createClient();
+  } catch {
+    return { ok: false, error: "Өгөгдлийн сантай холбогдож чадсангүй." };
+  }
 
   const colors = parseColors(formData.get("colors"));
   const { branch_stock, is_online, total_stock: branchTotal } = parseBranchStock(formData);
@@ -264,7 +269,13 @@ export async function updateProduct(
     return { ok: false, error: "Нэр болон зөв үнэ оруулна уу." };
   }
 
-  const supabase = await createClient();
+  let supabase: Awaited<ReturnType<typeof createClient>>;
+  try {
+    supabase = await createClient();
+  } catch {
+    return { ok: false, error: "Өгөгдлийн сантай холбогдож чадсангүй." };
+  }
+
   const colors = parseColors(formData.get("colors"));
   const { branch_stock, is_online, total_stock: branchTotal } = parseBranchStock(formData);
   const bss = parseBranchSizeStocks(formData);
