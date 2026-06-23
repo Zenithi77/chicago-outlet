@@ -27,8 +27,8 @@ export function ProductCard({ product }: { product: Product }) {
     return () => document.removeEventListener("mousedown", onClick);
   }, [showSizePicker]);
   const fp = finalPrice(product);
-  const soldOut = product.totalStock <= 0;
-  const lowStock = product.totalStock > 0 && product.totalStock <= 5;
+  const soldOut = !product.isOnline && product.totalStock <= 0;
+  const lowStock = !product.isOnline && product.totalStock > 0 && product.totalStock <= 5;
   const color = product.colors[activeColor] ?? { name: "", hex: "#000000" };
   const seed = product.images[activeImg] ?? product.slug;
 
@@ -69,8 +69,8 @@ export function ProductCard({ product }: { product: Product }) {
 
   const sizeOptions: { size: string; stock: number }[] =
     product.sizeStocks && product.sizeStocks.length > 0
-      ? product.sizeStocks
-      : product.sizes.map((s) => ({ size: s, stock: product.totalStock }));
+      ? product.sizeStocks.map((ss) => ({ ...ss, stock: product.isOnline ? Math.max(ss.stock, 999) : ss.stock }))
+      : product.sizes.map((s) => ({ size: s, stock: product.isOnline ? 999 : product.totalStock }));
 
   return (
     <div className="group flex h-full flex-col">

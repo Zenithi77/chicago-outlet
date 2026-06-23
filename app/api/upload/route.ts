@@ -11,7 +11,12 @@ export const runtime = "nodejs";
 // Returns { urls: string[] } of Cloudinary-hosted secure URLs.
 export async function POST(request: Request) {
   // Only signed-in staff may upload.
-  const profile = await getProfile();
+  let profile: Awaited<ReturnType<typeof getProfile>>;
+  try {
+    profile = await getProfile();
+  } catch {
+    return NextResponse.json({ error: "Нэвтрэлт шалгах үед алдаа гарлаа." }, { status: 500 });
+  }
   if (!isStaff(profile?.role)) {
     return NextResponse.json({ error: "Зөвшөөрөлгүй." }, { status: 401 });
   }

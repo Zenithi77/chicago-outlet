@@ -166,7 +166,7 @@ export default async function HomePage() {
               key={c.label}
               href={c.href}
               className="group overflow-hidden rounded-lg"
-            >
+            > 
               <div className="relative aspect-[3/4] overflow-hidden rounded-lg">
                 <ProductImage seed={c.seed} label={c.label} className="h-full w-full transition-transform duration-500 group-hover:scale-105" />
                 <div className="absolute inset-0 bg-black/10 transition group-hover:bg-black/25" />

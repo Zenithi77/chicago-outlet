@@ -27,9 +27,10 @@ export function ProductDetail({ product, isLoggedIn = false }: { product: Produc
   const [mounted, setMounted] = useState(false);
   useEffect(() => setMounted(true), []);
 
-  // Per-size stock lookup
+  // Per-size stock lookup. Online/pre-order products are always available.
   const hasSizeStocks = product.sizeStocks && product.sizeStocks.length > 0;
   const getSizeStock = (s: string) => {
+    if (product.isOnline) return 999;
     if (!hasSizeStocks) return product.totalStock;
     return product.sizeStocks.find((ss) => ss.size === s)?.stock ?? 0;
   };
@@ -45,19 +46,20 @@ export function ProductDetail({ product, isLoggedIn = false }: { product: Produc
     ? product.colors[colorIdx] ?? product.colors[0]
     : { name: "", hex: "#000000" };
 
-  // Sold out: if size selected + sizeStocks exist, check per-size; else check total
+  // Sold out: online products are never sold out.
   const selectedSizeStock = size ? getSizeStock(size) : null;
-  const soldOut = hasSizeStocks
-    ? (selectedSizeStock !== null ? selectedSizeStock <= 0 : product.totalStock <= 0)
-    : product.totalStock <= 0;
+  const soldOut = product.isOnline ? false :
+    hasSizeStocks
+      ? (selectedSizeStock !== null ? selectedSizeStock <= 0 : product.totalStock <= 0)
+      : product.totalStock <= 0;
 
   const add = (buyNow = false) => {
     if (hasSizes && !size) {
       setError("Хэмжээгээ сонгоно уу.");
       return;
     }
-    const effectiveStock = size ? getSizeStock(size) : product.totalStock;
-    if (effectiveStock <= 0) {
+    const effectiveStock = size ? getSizeStock(size) : (product.isOnline ? 999 : product.totalStock);
+    if (!product.isOnline && effectiveStock <= 0) {
       setError("Энэ хэмжээ дууссан байна.");
       return;
     }
@@ -216,7 +218,7 @@ export function ProductDetail({ product, isLoggedIn = false }: { product: Produc
             <div className="flex flex-wrap gap-2">
               {product.sizes.map((s) => {
                 const sStock = getSizeStock(s);
-                const isSoldOut = hasSizeStocks && sStock <= 0;
+                const isSoldOut = !product.isOnline && hasSizeStocks && sStock <= 0;
                 return (
                   <button
                     key={s}
@@ -245,7 +247,9 @@ export function ProductDetail({ product, isLoggedIn = false }: { product: Produc
 
           {/* Stock */}
           <p className="mt-4 text-sm">
-            {soldOut ? (
+            {product.isOnline ? (
+              <span className="font-semibold text-amber-600">Захиалга боломжтой</span>
+            ) : soldOut ? (
               <span className="font-semibold text-danger">
                 {size && hasSizeStocks ? `${size} хэмжээ дууссан` : "Дууссан"}
               </span>
@@ -300,7 +304,7 @@ export function ProductDetail({ product, isLoggedIn = false }: { product: Produc
                 </button>
                 <span className="w-10 text-center font-semibold">{qty}</span>
                 <button
-                  onClick={() => setQty((q) => Math.min(10, Math.max(1, selectedSizeStock ?? product.totalStock), q + 1))}
+                  onClick={() => setQty((q) => Math.min(10, Math.max(1, selectedSizeStock ?? (product.isOnline ? 999 : product.totalStock)), q + 1))}
                   className="px-4 py-3 text-lg font-medium hover:bg-background"
                   aria-label="Нэмэх"
                 >
@@ -432,7 +436,7 @@ export function ProductDetail({ product, isLoggedIn = false }: { product: Produc
                 </button>
                 <span className="w-7 text-center text-sm font-semibold">{qty}</span>
                 <button
-                  onClick={() => setQty((q) => Math.min(10, Math.max(1, selectedSizeStock ?? product.totalStock), q + 1))}
+                  onClick={() => setQty((q) => Math.min(10, Math.max(1, selectedSizeStock ?? (product.isOnline ? 999 : product.totalStock)), q + 1))}
                   className="px-3 py-2.5 text-lg font-medium leading-none"
                   aria-label="Нэмэх"
                 >
